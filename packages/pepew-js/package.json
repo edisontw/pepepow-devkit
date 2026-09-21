@@ -1,0 +1,33 @@
+{
+  "name": "@pepepow/pepew-js",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PEPEW protocol utilities for Payment URI parsing, serialization, address validation and amount handling.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "check": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bs58check": "^2.1.2"
+  },
+  "devDependencies": {
+    "@types/bs58check": "^2.1.1",
+    "typescript": "^5.6.3"
+  }
+}
