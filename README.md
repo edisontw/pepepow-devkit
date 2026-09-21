@@ -79,6 +79,8 @@ Before substantial work, read the latest roadmap and relevant repo documentation
 As of 2026-09-22:
 
 - repository initialized
-- Phase A implementation is present on `main`
-- CI configuration is present; Phase A is not considered closed until its test workflow is verified
+- Phase A protocol foundation is complete
+- GitHub Actions Node 20 build/tests are passing
+- PEPEW Payment URI v1 and shared test vectors are the current protocol baseline
+- Phase B moves to `pepepow-electrumx-service` for transaction-level payment correctness and Light optimization
 - no production dependency on this repository yet
