@@ -1,0 +1,119 @@
+{
+  "spec": "PEPEW Payment URI v1",
+  "knownAddress": "PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb",
+  "valid": [
+    {
+      "name": "address only",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb",
+      "canonical": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb",
+      "amountSats": null
+    },
+    {
+      "name": "whole amount",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1",
+      "canonical": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1",
+      "amountSats": "100000000"
+    },
+    {
+      "name": "minimum atomic amount",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=0.00000001",
+      "canonical": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=0.00000001",
+      "amountSats": "1"
+    },
+    {
+      "name": "canonicalize amount and human fields",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=12.34000000&label=Coffee%20Shop&message=Order%201234",
+      "canonical": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=12.34&label=Coffee%20Shop&message=Order%201234",
+      "amountSats": "1234000000",
+      "label": "Coffee Shop",
+      "message": "Order 1234"
+    },
+    {
+      "name": "scheme is case insensitive",
+      "uri": "PEPEW:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=2.5",
+      "canonical": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=2.5",
+      "amountSats": "250000000"
+    },
+    {
+      "name": "unknown optional parameter is preserved",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1&merchant=demo",
+      "canonical": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1&merchant=demo",
+      "amountSats": "100000000",
+      "extras": {
+        "merchant": "demo"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "wrong scheme",
+      "uri": "bitcoin:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1",
+      "code": "invalid_scheme"
+    },
+    {
+      "name": "missing address",
+      "uri": "pepew:?amount=1",
+      "code": "invalid_address"
+    },
+    {
+      "name": "bad checksum",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunc?amount=1",
+      "code": "invalid_address"
+    },
+    {
+      "name": "unsupported address version",
+      "uri": "pepew:1BoatSLRHtKNngkdXEeobR76b53LETtpyT?amount=1",
+      "code": "invalid_address"
+    },
+    {
+      "name": "zero amount",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=0",
+      "code": "invalid_amount"
+    },
+    {
+      "name": "negative amount",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=-1",
+      "code": "invalid_amount"
+    },
+    {
+      "name": "scientific notation",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1e-8",
+      "code": "invalid_amount"
+    },
+    {
+      "name": "too many decimal places",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=0.000000001",
+      "code": "invalid_amount"
+    },
+    {
+      "name": "duplicate amount",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1&amount=2",
+      "code": "duplicate_parameter"
+    },
+    {
+      "name": "unsupported required extension",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?req-feature=1",
+      "code": "unsupported_required_parameter"
+    },
+    {
+      "name": "fragment prohibited",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1#fragment",
+      "code": "fragment_not_allowed"
+    },
+    {
+      "name": "authority prohibited",
+      "uri": "pepew://PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=1",
+      "code": "authority_not_allowed"
+    },
+    {
+      "name": "case variant of known parameter",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?Amount=1",
+      "code": "invalid_parameter_name"
+    },
+    {
+      "name": "malformed percent encoding",
+      "uri": "pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?label=%ZZ",
+      "code": "invalid_percent_encoding"
+    }
+  ]
+}
