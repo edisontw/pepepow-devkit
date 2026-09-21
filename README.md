@@ -4,20 +4,21 @@ Developer-facing protocol and payment tooling for PEPEPOW / PEPEW.
 
 ## Scope
 
-This repository is planned to contain:
-
 ```text
 packages/
   pepew-js/
 
 specs/
   payment-uri/
+    v1.md
 
 apps/
-  pepewpay/
+  pepewpay/           # later phase
 
-examples/
+examples/             # later phase
+
 test-vectors/
+  payment-uri-v1.json
 ```
 
 Primary development sequence:
@@ -32,6 +33,33 @@ The server-side Payment/Event Gateway and webhook infrastructure belong in `edis
 
 The client wallet, mnemonic handling, derivation, transaction construction/signing, and wallet UI belong in `edisontw/pepepow-light-wallet`.
 
+## Phase A protocol foundation
+
+Implemented on `main`:
+
+- PEPEW Payment URI v1 specification
+- exact 8-decimal PEPEW amount handling
+- PEPEPOW P2PKH Base58Check validation using version byte `0x37`
+- deterministic Payment URI parser/serializer
+- shared valid/invalid URI test vectors
+- Node 20 build/test workflow
+
+Canonical example:
+
+```text
+pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=12.34&label=Coffee%20Shop&message=Order%201234
+```
+
+Development:
+
+```bash
+cd packages/pepew-js
+npm install
+npm test
+```
+
+Production PEPEW Light does not require Node.js for this work. Frontend artifacts can be built in CI or on a development machine.
+
 ## Security boundary
 
 This repository may contain client-side wallet integration helpers, but server-facing packages must never require users to disclose mnemonic phrases or private keys.
@@ -44,13 +72,13 @@ The canonical cross-repository architecture, development order, phase status, de
 
 `edisontw/pepepow-electrumx-service/docs/PAYMENT_PLATFORM_ROADMAP.md`
 
-Before substantial work, read the latest roadmap and the relevant repo documentation from GitHub `main`.
+Before substantial work, read the latest roadmap and relevant repo documentation from GitHub `main`.
 
 ## Current status
 
 As of 2026-09-22:
 
-- repository created
-- overall Payment Platform architecture documented
-- Phase A is next: PEPEW Payment URI v1 + `pepew-js` foundation
+- repository initialized
+- Phase A implementation is present on `main`
+- CI configuration is present; Phase A is not considered closed until its test workflow is verified
 - no production dependency on this repository yet
