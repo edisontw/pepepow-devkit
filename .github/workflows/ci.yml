@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  pepew-js:
+  devkit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -27,6 +27,18 @@ jobs:
         run: npm install
         working-directory: packages/pepew-js
 
-      - name: Build and test pepew-js
+      - name: Test pepew-js
         run: npm test
         working-directory: packages/pepew-js
+
+      - name: Install PepewPay dependencies
+        run: npm install
+        working-directory: apps/pepewpay
+
+      - name: Test PepewPay
+        run: npm test
+        working-directory: apps/pepewpay
+
+      - name: Build PepewPay static output
+        run: npm run build
+        working-directory: apps/pepewpay
