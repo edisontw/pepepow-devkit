@@ -13,7 +13,7 @@ specs/
     v1.md
 
 apps/
-  pepewpay/           # later phase
+  pepewpay/
 
 examples/             # later phase
 
@@ -60,6 +60,23 @@ npm test
 
 Production PEPEW Light does not require Node.js for this work. Frontend artifacts can be built in CI or on a development machine.
 
+## Phase C PepewPay
+
+Implemented on `main`:
+
+- static Vite/React checkout shell
+- PEPEW Payment URI v1 QR generation
+- native `pepew:` wallet handoff
+- PEPEW Light web-wallet fallback
+- share/copy flow for public payment intent
+- minimal manifest/service-worker PWA shell
+- no mnemonic, private-key, derivation, or signing code
+- Node is required only at build time; `dist/` is static output
+
+Persisted transaction-level payment status is intentionally not connected yet. That requires the Payment/Event Gateway rather than the legacy address-balance monitor.
+
+See `apps/pepewpay/README.md` for development and handoff details.
+
 ## Security boundary
 
 This repository may contain client-side wallet integration helpers, but server-facing packages must never require users to disclose mnemonic phrases or private keys.
@@ -82,5 +99,8 @@ As of 2026-09-22:
 - Phase A protocol foundation is complete
 - GitHub Actions Node 20 build/tests are passing
 - PEPEW Payment URI v1 and shared test vectors are the current protocol baseline
-- Phase B moves to `pepepow-electrumx-service` for transaction-level payment correctness and Light optimization
-- no production dependency on this repository yet
+- Phase A protocol foundation is complete
+- Phase B payment correctness foundation is complete in `pepepow-electrumx-service`
+- Phase C PepewPay static checkout shell is implemented and under CI validation
+- persisted payment status remains pending the Payment/Event Gateway API
+- no production Node.js runtime dependency is required
