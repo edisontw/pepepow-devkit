@@ -94,3 +94,29 @@ VITE_PAYMENT_API_BASE_URL=https://light.pepepow.net/api
 ```
 
 The status capability link should be treated as shareable-but-private: anyone holding the high-entropy `payment_id` can view that payment's status.
+
+
+## Production artifact
+
+Every successful push to `main` builds PepewPay in GitHub Actions and publishes the static output to the generated branch:
+
+```text
+pepewpay-dist
+```
+
+That branch contains deployable files only and includes `DEPLOYMENT.txt` with the source commit used for the build.
+
+This allows the production host to deploy PepewPay without installing Node.js:
+
+```bash
+git clone --depth 1 --branch pepewpay-dist \
+  https://github.com/edisontw/pepepow-devkit.git
+```
+
+The intended first production path is:
+
+```text
+https://light.pepepow.net/pay/
+```
+
+with static files served by Nginx from `/var/www/pay`.
