@@ -38,24 +38,83 @@ Nginx configuration is maintained in:
 edisontw/pepepow-electrumx-service/deploy/nginx/pepew-light
 ```
 
+## Production repository authentication
+
+`pepepow-devkit` is private. Production should use a dedicated, repository-scoped,
+read-only SSH deploy key rather than a long-lived PAT or account password.
+
+Generate the key on the production host so the private key never leaves the host:
+
+```bash
+install -d -m 0700 ~/.ssh
+
+ssh-keygen -t ed25519 \
+  -f ~/.ssh/pepepow-devkit-deploy \
+  -C "pepewpay production deploy key" \
+  -N ""
+
+chmod 600 ~/.ssh/pepepow-devkit-deploy
+chmod 644 ~/.ssh/pepepow-devkit-deploy.pub
+
+cat ~/.ssh/pepepow-devkit-deploy.pub
+```
+
+Add only the public key to GitHub:
+
+```text
+edisontw/pepepow-devkit
+  -> Settings
+  -> Deploy keys
+  -> Add deploy key
+  -> Allow write access: OFF
+```
+
+Use a dedicated SSH host alias so this key is not selected for unrelated GitHub
+repositories:
+
+```sshconfig
+Host github-pepepow-devkit
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/pepepow-devkit-deploy
+    IdentitiesOnly yes
+```
+
+Before first use, verify GitHub's SSH host fingerprint against the current official
+GitHub documentation, then add the verified host key to `~/.ssh/known_hosts`.
+
+Test the repository-scoped credential:
+
+```bash
+ssh -T github-pepepow-devkit
+```
+
+GitHub normally reports successful authentication while denying shell access.
+
 ## Deploy on production host
 
 ```bash
 rm -rf /tmp/pepewpay-dist
 
 git clone --depth 1 --branch pepewpay-dist \
-  https://github.com/edisontw/pepepow-devkit.git \
+  git@github-pepepow-devkit:edisontw/pepepow-devkit.git \
   /tmp/pepewpay-dist
 
 cat /tmp/pepewpay-dist/DEPLOYMENT.txt
 
-sudo install -d -m 0755 /var/www/pay
-sudo rm -rf /var/www/pay/*
-sudo cp -a /tmp/pepewpay-dist/. /var/www/pay/
-sudo rm -rf /var/www/pay/.git
-sudo chown -R root:root /var/www/pay
-sudo find /var/www/pay -type d -exec chmod 0755 {} +
-sudo find /var/www/pay -type f -exec chmod 0644 {} +
+sudo rm -rf /var/www/pay.new
+sudo install -d -m 0755 /var/www/pay.new
+sudo cp -a /tmp/pepewpay-dist/. /var/www/pay.new/
+sudo rm -rf /var/www/pay.new/.git
+sudo chown -R root:root /var/www/pay.new
+sudo find /var/www/pay.new -type d -exec chmod 0755 {} +
+sudo find /var/www/pay.new -type f -exec chmod 0644 {} +
+
+sudo rm -rf /var/www/pay.previous
+if [ -d /var/www/pay ]; then
+  sudo mv /var/www/pay /var/www/pay.previous
+fi
+sudo mv /var/www/pay.new /var/www/pay
 ```
 
 Then update/reload Nginx from the service repository:
