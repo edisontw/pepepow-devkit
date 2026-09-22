@@ -154,6 +154,26 @@ Expected behavior:
 - no merchant API key exists in the browser
 - paid transactions advance through persisted watcher state
 
+## Production validation
+
+Validated on 2026-09-22 at:
+
+```text
+https://light.pepepow.net/pay/
+```
+
+Production E2E completed with a new 0.1 PEPEW persisted checkout:
+
+```text
+waiting
+  -> PEPEW Light web-wallet handoff
+  -> broadcast
+  -> paid_unconfirmed
+  -> paid_confirmed (1 confirmation)
+```
+
+The confirmed checkout displayed the read-only persisted address/amount, canonical QR/payment URI, wallet handoff actions, exact received/policy-confirmed amounts, confirmation policy, and payment version.
+
 ## Rollback
 
 The frontend is static and independent of the backend process.
