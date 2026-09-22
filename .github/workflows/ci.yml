@@ -47,6 +47,15 @@ jobs:
         run: npm run build
         working-directory: apps/pepewpay
 
+      - name: Check browser bundle for Node-only Buffer shims
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'safe-buffer|process\.nextTick' dist/assets/*.js; then
+            echo "PepewPay browser bundle contains Node-only compatibility code."
+            exit 1
+          fi
+        working-directory: apps/pepewpay
+
       - name: Upload PepewPay static artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
