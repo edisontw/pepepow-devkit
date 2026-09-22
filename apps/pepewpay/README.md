@@ -80,17 +80,17 @@ https://<pepewpay-host>/?payment_id=pay_<high-entropy-id>
 PepewPay then performs read-only requests:
 
 ```http
-GET https://light.pepepow.net/api/v1/payments/{payment_id}
+GET /api/v1/payments/{payment_id}
 ```
 
-No merchant API key is present in browser JavaScript, the Payment URI, QR data, or wallet handoff.
+By default the browser uses the same origin's `/api` gateway, so one static build can be served from `light.pepepow.net` or `pay.pepepow.net` without hard-coding the authoritative host. No merchant API key is present in browser JavaScript, the Payment URI, QR data, or wallet handoff.
 
 Polling is every 4 seconds while the document is visible. Hidden tabs skip status refreshes. The backend status endpoint is SQLite-backed and does not cause equivalent ElectrumX polling.
 
 Override the API base at build time if PepewPay is hosted against another gateway:
 
 ```text
-VITE_PAYMENT_API_BASE_URL=https://light.pepepow.net/api
+VITE_PAYMENT_API_BASE_URL=https://example-gateway.invalid/api
 ```
 
 The status capability link should be treated as shareable-but-private: anyone holding the high-entropy `payment_id` can view that payment's status.
