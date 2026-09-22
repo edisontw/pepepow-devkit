@@ -18,13 +18,21 @@ DEPLOYMENT.txt
 
 which records the source commit used for the build.
 
-## Current production target
+## Production targets
 
-Initial rollout:
+Initial verified rollout:
 
 ```text
 https://light.pepepow.net/pay/
 ```
+
+Phase F target:
+
+```text
+https://pay.pepepow.net/
+```
+
+PepewPay now uses same-origin `/api` for persisted status by default. The web-wallet fallback remains `https://light.pepepow.net/wallet/send`.
 
 Static filesystem path:
 
