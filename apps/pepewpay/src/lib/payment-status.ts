@@ -1,6 +1,6 @@
 import { parsePepewAmount } from "@pepepow/pepew-js";
 
-export const DEFAULT_PAYMENT_API_BASE_URL = "https://light.pepepow.net/api";
+export const DEFAULT_PAYMENT_API_BASE_URL = "/api";
 export const PAYMENT_STATUS_POLL_MS = 4_000;
 
 export type PaymentStatusName =
