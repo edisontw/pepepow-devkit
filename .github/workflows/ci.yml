@@ -42,3 +42,46 @@ jobs:
       - name: Build PepewPay static output
         run: npm run build
         working-directory: apps/pepewpay
+
+      - name: Upload PepewPay static artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pepewpay-dist
+          path: apps/pepewpay/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-pepewpay:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: devkit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download PepewPay static artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pepewpay-dist
+          path: ${{ runner.temp }}/pepewpay-dist
+
+      - name: Publish static deployment branch
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan pepewpay-dist
+          git rm -rf .
+          cp -a "${RUNNER_TEMP}/pepewpay-dist/." .
+          printf 'source_commit=%s\nbuilt_by=GitHub Actions\n' "${SOURCE_COMMIT}" > DEPLOYMENT.txt
+          touch .nojekyll
+          git add -A
+          git commit -m "deploy: PepewPay ${SOURCE_COMMIT}"
+          git push --force origin HEAD:pepewpay-dist
