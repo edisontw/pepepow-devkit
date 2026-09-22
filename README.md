@@ -101,6 +101,6 @@ As of 2026-09-22:
 - PEPEW Payment URI v1 and shared test vectors are the current protocol baseline
 - Phase A protocol foundation is complete
 - Phase B payment correctness foundation is complete in `pepepow-electrumx-service`
-- Phase C PepewPay static checkout shell is implemented and under CI validation
-- persisted payment status remains pending the Payment/Event Gateway API
+- Phase C PepewPay supports standalone Payment URI creation and persisted transaction-level checkout status
+- persisted checkout links use `?payment_id=...` and perform read-only SQLite-backed status polling
 - no production Node.js runtime dependency is required
