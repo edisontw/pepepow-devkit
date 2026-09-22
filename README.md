@@ -73,7 +73,7 @@ Implemented on `main`:
 - no mnemonic, private-key, derivation, or signing code
 - Node is required only at build time; `dist/` is static output
 
-Persisted transaction-level payment status is intentionally not connected yet. That requires the Payment/Event Gateway rather than the legacy address-balance monitor.
+Persisted transaction-level payment status is connected to the Payment/Event Gateway through read-only high-entropy payment capability IDs.
 
 See `apps/pepewpay/README.md` for development and handoff details.
 
@@ -104,3 +104,4 @@ As of 2026-09-22:
 - Phase C PepewPay supports standalone Payment URI creation and persisted transaction-level checkout status
 - persisted checkout links use `?payment_id=...` and perform read-only SQLite-backed status polling
 - no production Node.js runtime dependency is required
+- successful `main` builds publish deployable PepewPay static files to the generated `pepewpay-dist` branch
