@@ -12,6 +12,9 @@ Current Phase C scope:
 - copy/share public payment intent
 - build as static files
 - provide a minimal manifest/service-worker PWA shell
+- load authoritative persisted checkout status from the Payment/Event Gateway with a high-entropy `payment_id`
+- poll SQLite-backed status every 4 seconds while the checkout page is visible
+- show exact decimal received/confirmed amounts and the required confirmation policy
 
 It does **not** hold keys, derive keys, sign transactions, or accept a mnemonic.
 
@@ -64,8 +67,30 @@ VITE_PEPEW_WEB_WALLET_URL
 
 Only public address/amount data is handed to the existing web wallet. Signing remains inside the wallet client.
 
-## Status integration
+## Persisted checkout status
 
 This app intentionally does not use the legacy address-balance monitor as authoritative payment state.
 
-Persisted transaction-level status will be connected after the Payment/Event Gateway API is defined in the next backend phase.
+A merchant backend creates the persisted payment through the authenticated server-to-server API and gives the customer a PepewPay capability link:
+
+```text
+https://<pepewpay-host>/?payment_id=pay_<high-entropy-id>
+```
+
+PepewPay then performs read-only requests:
+
+```http
+GET https://light.pepepow.net/api/v1/payments/{payment_id}
+```
+
+No merchant API key is present in browser JavaScript, the Payment URI, QR data, or wallet handoff.
+
+Polling is every 4 seconds while the document is visible. Hidden tabs skip status refreshes. The backend status endpoint is SQLite-backed and does not cause equivalent ElectrumX polling.
+
+Override the API base at build time if PepewPay is hosted against another gateway:
+
+```text
+VITE_PAYMENT_API_BASE_URL=https://light.pepepow.net/api
+```
+
+The status capability link should be treated as shareable-but-private: anyone holding the high-entropy `payment_id` can view that payment's status.
