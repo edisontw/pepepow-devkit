@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  DEFAULT_PAYMENT_API_BASE_URL,
   fetchPaymentStatus,
   paymentIdFromSearch,
   paymentProgressPercent,
@@ -75,6 +76,22 @@ describe("persisted payment status", () => {
       `https://light.example/api/v1/payments/${PAYMENT_ID}`,
       expect.any(Object),
     );
+  });
+
+
+
+  it("defaults persisted status reads to the same-origin API path", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      expect(url).toBe(`/api/v1/payments/${PAYMENT_ID}`);
+      return new Response(JSON.stringify(payload()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(DEFAULT_PAYMENT_API_BASE_URL).toBe("/api");
+    await fetchPaymentStatus(PAYMENT_ID);
   });
 
   it("uses exact decimal strings for progress math", () => {
