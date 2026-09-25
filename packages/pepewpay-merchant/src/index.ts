@@ -183,10 +183,11 @@ export function buildCheckoutUrl(
 }
 
 function apiUrl(origin: string, path: string): string {
-  const url = requireHttpsUrl(origin, "apiOrigin");
-  url.pathname = path;
-  url.search = "";
-  url.hash = "";
+  const base = requireHttpsUrl(origin, "apiOrigin");
+  const url = new URL(path, `${base.origin}/`);
+  if (url.origin !== base.origin || url.protocol !== "https:") {
+    throw new TypeError("API path must remain on the configured HTTPS origin");
+  }
   return url.toString();
 }
 
