@@ -7,6 +7,7 @@ Developer-facing protocol and payment tooling for PEPEPOW / PEPEW.
 ```text
 packages/
   pepew-js/
+  pepewpay-merchant/
 
 specs/
   payment-uri/
@@ -15,7 +16,8 @@ specs/
 apps/
   pepewpay/
 
-examples/             # later phase
+examples/
+  merchant-node/
 
 test-vectors/
   payment-uri-v1.json
@@ -77,6 +79,31 @@ Persisted transaction-level payment status is connected to the Payment/Event Gat
 
 See `apps/pepewpay/README.md` for development and handoff details.
 
+## Phase H4 merchant helpers
+
+Implemented on `main`:
+
+- server-side `@pepepow/pepewpay-merchant` package for Node.js 20+
+- authenticated payment create helper
+- exact `merchant_reference` recovery helper
+- customer checkout URL builder that exposes only `payment_id`
+- exact-raw-body webhook HMAC verification
+- constant-time signature comparison and bounded replay-window validation
+- reorg-safe `payment_version` ordering helper
+- framework-neutral durable-store composition example under `examples/merchant-node/`
+- no merchant secret handling in browser packages or PepewPay
+
+The merchant package is intentionally separate from `@pepepow/pepew-js` so
+server credentials and webhook verification code do not become part of the
+browser/protocol package.
+
+See:
+
+```text
+packages/pepewpay-merchant/README.md
+examples/merchant-node/README.md
+```
+
 ## Security boundary
 
 This repository may contain client-side wallet integration helpers, but server-facing packages must never require users to disclose mnemonic phrases or private keys.
@@ -93,7 +120,7 @@ Before substantial work, read the latest roadmap and relevant repo documentation
 
 ## Current status
 
-As of 2026-09-22:
+As of 2026-09-25:
 
 - repository initialized
 - Phase A protocol foundation is complete
@@ -106,3 +133,5 @@ As of 2026-09-22:
 - no production Node.js runtime dependency is required
 - successful `main` builds publish deployable PepewPay static files to the generated `pepewpay-dist` branch
 - production validation on 2026-09-22 completed a new 0.1 PEPEW checkout through web-wallet handoff, broadcast, `paid_unconfirmed`, and `paid_confirmed`
+- Phase H3 reference merchant flow is complete in `pepepow-electrumx-service`
+- Phase H4 adds the server-side `@pepepow/pepewpay-merchant` helpers and durable-store composition examples
