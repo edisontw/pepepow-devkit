@@ -35,6 +35,17 @@ jobs:
         run: npm test
         working-directory: packages/pepew-js
 
+      - name: Install merchant SDK dependencies
+        run: npm install
+        working-directory: packages/pepewpay-merchant
+
+      - name: Test merchant SDK
+        run: npm test
+        working-directory: packages/pepewpay-merchant
+
+      - name: Check merchant reference examples
+        run: node --check examples/merchant-node/reference-flow.mjs
+
       - name: Install PepewPay dependencies
         run: npm install
         working-directory: apps/pepewpay
