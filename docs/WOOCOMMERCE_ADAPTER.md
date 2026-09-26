@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-26
 
-Status: **I5.3 complete — I5.4 next**
+Status: **I5.4 automated acceptance complete — staging/live paid E2E remains**
 
 Location:
 
@@ -131,15 +131,34 @@ I5.3 verification:
 - existing Woo unit/static checks, merchant sample, DevKit/SDK/PepewPay, and `pepewpay-dist` remained green
 ## I5.4 — distributable plugin
 
-- produce installable plugin ZIP
-- add setup/upgrade/uninstall documentation
-- test activation with WooCommerce absent/present
-- test repeated checkout retries and browser back/forward
-- test webhook duplicate/retry/reorg
-- test order recovery after PHP/HTTP failure
-- document production webhook registration and secret rotation
-- complete one staging/live Woo checkout E2E before calling the adapter ready
+Status: **IN PROGRESS — automated packaging/runtime acceptance complete; one staging/live paid E2E remains**
 
+- [x] build an allowlist-based `pepew-payments.zip` with one plugin root
+- [x] include runtime PHP/JS, README, uninstall handler, and MIT license only
+- [x] reject test/dev directories, environment files, git files, and node modules from the ZIP
+- [x] add WooCommerce extension metadata (`Requires Plugins`, author/developer, update URI, tested version)
+- [x] clean-install the exact CI-built ZIP in a fresh WordPress/WooCommerce runtime
+- [x] verify activation with WooCommerce present
+- [x] verify activation is rejected with WooCommerce inactive and with dependency plugin files absent
+- [x] force-overwrite the ZIP and verify merchant settings survive upgrade
+- [x] verify deactivation preserves settings
+- [x] verify explicit uninstall removes merchant API/webhook secrets while historical order payment metadata remains untouched
+- [x] exercise repeated checkout/back-button semantics without issuing a second create
+- [x] exercise uncertain-create transport loss + exact merchant-reference recovery
+- [x] exercise signed webhook duplicate/stale/version/reorg lifecycle in both legacy and HPOS runtime modes
+- [x] add install/upgrade/uninstall, webhook rotation, rollback, and production acceptance documentation
+- [ ] complete one externally reachable staging/live Woo -> PepewPay -> wallet -> Payment Platform -> webhook -> Woo order paid E2E
+
+I5.4 automated verification:
+
+- implementation commit: `58c6e300d392e3a0a9ae581bbdebd9869b3d90e3`
+- CI integration/fixes: `e67768b074f6aadd446c125fe35e07b7f15ae835`, `fa7614d26f38d62a368fb5a6e2c6cf3c3443fff6`, `e8fa4ccd879a90d93e63bebf4f2d0a662627055b`, `51f8601b591f5e252172ae8078e96cd0a5dda041`
+- GitHub Actions run `36244246216` completed successfully
+- `woocommerce-package`, `WooCommerce runtime (legacy)`, and `WooCommerce runtime (hpos)` all passed
+- CI artifact name: `pepew-payments-woocommerce`
+- the runtime merchant lifecycle test covers retry/recovery/webhook/reorg without production credentials
+- production/staging paid E2E remains intentionally separate because it requires an externally reachable Woo site, merchant credentials, registered webhook endpoint, and one real wallet-signed transaction
+- see `docs/WOOCOMMERCE_DEPLOYMENT.md` for the exact staging/live acceptance checklist
 ## Security boundary
 
 - merchant API key: WordPress server only
