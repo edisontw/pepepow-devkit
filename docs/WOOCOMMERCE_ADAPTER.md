@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-26
 
-Status: **I5.2 complete — I5.3 next**
+Status: **I5.3 complete — I5.4 next**
 
 Location:
 
@@ -57,7 +57,7 @@ Compatibility declarations must reflect actual testing rather than intent.
 - [x] explicitly declare Checkout Blocks incompatible for this increment
 - [x] add PHP lint, identity tests, and no-direct-order-storage guard
 - [x] CI verify PHP syntax, deterministic order identity, and no direct order-storage writes
-- [ ] test inside an actual WordPress/WooCommerce runtime before any compatibility claim
+- [x] test inside an actual WordPress/WooCommerce runtime before compatibility declaration (completed in I5.3)
 
 Merchant identity format:
 
@@ -108,18 +108,27 @@ I5.2 verification:
 
 ## I5.3 — Blocks + HPOS acceptance
 
-Add Checkout Block support using WooCommerce's current payment-method
-integration interfaces.
+Status: **COMPLETE — Checkout Blocks + legacy/HPOS runtime matrix verified 2026-09-26**
 
-Run a real WooCommerce matrix with HPOS enabled and disabled. Only after that
-passes:
+- [x] add server-side Checkout Block integration using `AbstractPaymentMethodType`
+- [x] add client-side `registerPaymentMethod()` registration without introducing a second payment flow
+- [x] keep actual checkout execution on the existing `WC_Payment_Gateway::process_payment()` contract
+- [x] pin acceptance runtime to WordPress 7.1.2 / WooCommerce 11.1.2 / PHP 8.1
+- [x] test Woo order creation/meta reload/`payment_complete()` with legacy storage
+- [x] test the same runtime smoke with HPOS enabled
+- [x] verify gateway registration, Blocks registration hook, Blocks script, and public method settings in the real Woo runtime
+- [x] declare `cart_checkout_blocks` compatibility only after the matrix passed
+- [x] declare `custom_order_tables` compatibility only after the matrix passed
+- [x] set `WC tested up to: 11.1.2`
 
-- declare `custom_order_tables` compatibility
-- declare `cart_checkout_blocks` compatibility
-- update `WC tested up to`
+I5.3 verification:
 
-Until then, compatibility must not be overstated.
-
+- implementation commits: `a0e8e8552cdb60344a5c4f5dd753d3ce3d106c83`, `9d244c13347ae122a99e531ec3b7cb7dd2f5eeb3`
+- runtime fixes: `816c27c8edb1a0a1c298aec8098e4948e117f7df`, `482bf10d2880305379b744bf851de01674b02be6`, `4e8d0755ba769413977fde168ea6a8e7bd5542e3`, `19a4a9ddd9efea2299dd901a58656a6a34be230b`
+- compatibility commits: `2fefa5ee40212b0cc8a52ddcd1f5114293ddf4fe`, `02a30dd441335e3b50aba397f2443c20f9ffc4a8`
+- GitHub Actions run `36231075337` completed successfully after compatibility was declared
+- both `WooCommerce runtime (legacy)` and `WooCommerce runtime (hpos)` passed the pinned real runtime smoke
+- existing Woo unit/static checks, merchant sample, DevKit/SDK/PepewPay, and `pepewpay-dist` remained green
 ## I5.4 — distributable plugin
 
 - produce installable plugin ZIP
