@@ -76,6 +76,33 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  merchant-sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build local merchant SDK
+        run: |
+          npm install
+          npm run build
+        working-directory: packages/pepewpay-merchant
+
+      - name: Install runnable merchant sample
+        run: npm install
+        working-directory: examples/merchant-app
+
+      - name: Test runnable merchant sample
+        run: npm run check
+        working-directory: examples/merchant-app
+
   publish-pepewpay:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: devkit
