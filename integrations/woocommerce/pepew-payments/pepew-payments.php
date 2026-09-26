@@ -85,3 +85,21 @@ add_action(
 	},
 	20
 );
+
+add_action(
+	'woocommerce_blocks_loaded',
+	static function (): void {
+		if ( ! class_exists( '\\Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\AbstractPaymentMethodType' ) ) {
+			return;
+		}
+
+		require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-blocks.php';
+
+		add_action(
+			'woocommerce_blocks_payment_method_type_registration',
+			static function ( $payment_method_registry ): void {
+				$payment_method_registry->register( new PEPEW_WC_Blocks() );
+			}
+		);
+	}
+);

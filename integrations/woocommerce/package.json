@@ -1,0 +1,11 @@
+{
+  "name": "pepew-woocommerce-runtime",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "wp-env": "wp-env"
+  },
+  "devDependencies": {
+    "@wordpress/env": "11.16.0"
+  }
+}
