@@ -148,9 +148,14 @@ can create/recover a PEPEW payment intent, persist stable Woo order identity
 and exact amount snapshot state through WooCommerce CRUD, and redirect to
 PepewPay without moving payment authority into WordPress.
 
-The next coherent increment is I5.2: signed webhook receipt plus durable
-WooCommerce order lifecycle updates using `event_id`/`payment_version`
-semantics.
+I5.2 is also complete: the adapter now has an exact-raw-body signed webhook
+receiver, durable event/version ordering, race-safe payment binding, and
+reorg-aware Woo order transitions that avoid automatically resurrecting
+cancelled/refunded business state.
+
+The next coherent increment is I5.3: Checkout Block integration plus a real
+WordPress/WooCommerce matrix with HPOS enabled/disabled before compatibility is
+declared.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
 it does not block I5 adapter work.
