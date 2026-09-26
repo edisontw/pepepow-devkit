@@ -160,7 +160,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Install wp-env
         run: npm install --no-audit --no-fund
@@ -175,16 +175,16 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ matrix.storage }}" = "hpos" ]; then
-            npx --no-install wp-env run cli "wp wc hpos enable --for-new-shop"
+            npx --no-install wp-env run cli wp wc hpos enable -- --for-new-shop
           else
-            npx --no-install wp-env run cli "wp wc hpos disable"
+            npx --no-install wp-env run cli wp wc hpos disable
           fi
-          npx --no-install wp-env run cli "wp option update pepew_test_expected_hpos ${{ matrix.storage }}"
-          npx --no-install wp-env run cli "wp wc hpos status"
+          npx --no-install wp-env run cli wp option update pepew_test_expected_hpos ${{ matrix.storage }}
+          npx --no-install wp-env run cli wp wc hpos status
         working-directory: integrations/woocommerce
 
       - name: Run WooCommerce runtime smoke
-        run: npx --no-install wp-env run cli "wp eval-file wp-content/plugins/pepew-payments/wp-env/runtime-smoke.php"
+        run: npx --no-install wp-env run cli wp eval-file wp-content/plugins/pepew-payments/wp-env/runtime-smoke.php
         working-directory: integrations/woocommerce
 
       - name: Show wp-env logs on failure
