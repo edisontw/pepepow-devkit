@@ -237,16 +237,29 @@ jobs:
         run: npx --no-install wp-env start
         working-directory: integrations/woocommerce
 
+      - name: Copy built ZIP into WordPress shared volume
+        shell: bash
+        run: |
+          set -euo pipefail
+          wordpress_container=$(docker ps --filter 'name=wordpress' --format '{{.ID}}' | head -n 1)
+          if [ -z "$wordpress_container" ]; then
+            echo "wp-env WordPress container not found."
+            exit 1
+          fi
+          docker cp dist/pepew-payments.zip "${wordpress_container}:/var/www/html/wp-content/uploads/pepew-payments.zip"
+          npx --no-install wp-env run cli ls -l /var/www/html/wp-content/uploads/pepew-payments.zip
+        working-directory: integrations/woocommerce
+
       - name: Install packaged plugin with WooCommerce active
         run: |
-          npx --no-install wp-env run cli wp plugin install /var/www/html/wp-content/uploads/pepew-package/pepew-payments.zip --activate
+          npx --no-install wp-env run cli wp plugin install /var/www/html/wp-content/uploads/pepew-payments.zip --activate
           npx --no-install wp-env run cli wp plugin is-active pepew-payments
         working-directory: integrations/woocommerce
 
       - name: Verify overwrite upgrade preserves merchant settings
         run: |
           npx --no-install wp-env run cli wp eval 'update_option("woocommerce_pepew_settings", array("enabled" => "yes", "api_key" => "upgrade-secret", "webhook_secret" => "upgrade-webhook-secret"));'
-          npx --no-install wp-env run cli wp plugin install /var/www/html/wp-content/uploads/pepew-package/pepew-payments.zip --force
+          npx --no-install wp-env run cli wp plugin install /var/www/html/wp-content/uploads/pepew-payments.zip --force
           npx --no-install wp-env run cli wp plugin activate pepew-payments
           npx --no-install wp-env run cli wp plugin is-active pepew-payments
           npx --no-install wp-env run cli wp eval '$_s = get_option("woocommerce_pepew_settings", array()); exit((($_s["api_key"] ?? "") === "upgrade-secret" && ($_s["webhook_secret"] ?? "") === "upgrade-webhook-secret") ? 0 : 1);'
@@ -287,7 +300,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npx --no-install wp-env run cli wp plugin install /var/www/html/wp-content/uploads/pepew-package/pepew-payments.zip
+          npx --no-install wp-env run cli wp plugin install /var/www/html/wp-content/uploads/pepew-payments.zip
           npx --no-install wp-env run cli wp plugin deactivate woocommerce
           npx --no-install wp-env run cli mv wp-content/plugins/woocommerce/woocommerce.php wp-content/plugins/woocommerce/woocommerce.php.disabled
           set +e
