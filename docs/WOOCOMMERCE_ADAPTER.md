@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-26
 
-Status: **I5.1 complete — I5.2 next**
+Status: **I5.2 complete — I5.3 next**
 
 Location:
 
@@ -80,16 +80,31 @@ more than one Woo store.
 
 ## I5.2 — webhook and order lifecycle
 
-Implement exact-raw-body HMAC verification in PHP using the existing Webhook v1
-contract. Then:
+Status: **COMPLETE — implementation and CI verified 2026-09-26**
 
-- resolve order from merchant reference/payment ID
-- durably reject duplicate/stale events
-- accept higher `payment_version` even when status moves backward on reorg
-- map waiting/unconfirmed/confirmed/expired behavior to Woo order semantics
-- never mark paid merely because a callback arrived; verified authoritative
-  state/version drives the transition
-- do not expose signing secrets in logs/order notes
+- [x] expose a WordPress REST webhook receiver at `/wp-json/pepew/v1/webhook`
+- [x] verify Webhook v1 HMAC against exact raw request bytes before JSON parsing
+- [x] enforce event-ID/header consistency, timestamp replay window, bounded body size, payment ID/version, merchant reference, and atom amount checks
+- [x] keep webhook signing secret server-side in gateway settings
+- [x] resolve the Woo order from deterministic site-scoped merchant reference and validate stored reference/payment/amount bindings
+- [x] bind `payment_id` safely when a webhook wins the create-response race
+- [x] persist current `payment_version`, PEPEW status, and last accepted event ID through WooCommerce order CRUD
+- [x] ignore lower versions and make same-event retries idempotent
+- [x] accept higher-version reorg rollback instead of ranking PEPEW states monotonically
+- [x] use a short-lived per-event WordPress option lock to suppress concurrent duplicate processing without adding Redis/queue infrastructure
+- [x] use WooCommerce `payment_complete()` for normal confirmed/overpaid transitions
+- [x] move processing orders back to on-hold + review on confirmation loss, while never automatically resurrecting cancelled/refunded orders
+- [x] preserve completed/refunded/cancelled business state and flag manual review when a later payment event conflicts with irreversible fulfillment/business actions
+- [x] keep secrets and full capability URLs out of webhook error responses/order notes
+- [x] support large JSON atom values through `JSON_BIGINT_AS_STRING`
+
+I5.2 verification:
+
+- DevKit commits: `a4f990540db814a1e632719155d5c3a8890ad61b`, `9bb982191cb727a955e6e50b675baaa29407f412`, `9ccf70928b44bdb3d3afdcadbe77efebca2a2fad`, `ef400850a443753a2a0bde1e010737b5bd31646b`, `62f9a1f1f8d7a23c81f45fcdad1b25005522807c`
+- GitHub Actions run `36225272365` completed successfully
+- WooCommerce adapter job passed PHP lint, identity parsing, exact-body webhook verifier/replay/tamper tests, large atom parsing, order-state/reorg policy tests, and no-direct-order-storage guard
+- existing merchant-sample, DevKit/SDK/PepewPay, and `pepewpay-dist` jobs remained green
+- real WordPress/WooCommerce/HPOS runtime acceptance remains intentionally deferred to I5.3
 
 ## I5.3 — Blocks + HPOS acceptance
 
