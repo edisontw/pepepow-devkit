@@ -1,6 +1,6 @@
 # PEPEW Payments for WooCommerce
 
-Status: **Phase I I5.2 complete — runtime/HPOS acceptance still pending**
+Status: **Phase I I5.3 complete — distributable plugin/production acceptance next**
 
 This plugin is the first real platform adapter for PEPEW Payment Platform.
 
@@ -20,19 +20,19 @@ Current scope:
 - durable order `payment_version` / last-event state for duplicate and stale-event handling
 - short-lived per-event concurrency lock without adding an external queue
 - reorg-safe Woo order policy that does not assume payment status is monotonic
+- WooCommerce Checkout Block payment-method integration
+- declared `cart_checkout_blocks` and `custom_order_tables` compatibility after real runtime acceptance
 
 The plugin never receives a mnemonic/private key and never signs a transaction.
 
-## Important limitations after I5.2
+## Remaining limitations after I5.3
 
 This increment is intentionally incomplete:
 
-- Checkout Block is **not supported yet** and is declared incompatible.
-- HPOS runtime compatibility is **not declared yet** until a real WooCommerce test matrix passes.
 - No fiat-to-PEPEW conversion exists. The order/store currency must be `PEPEW`.
 - Refunds, subscriptions, tokenization, and saved methods are not supported.
 
-Do not publish this plugin to merchants as production-ready yet.
+Do not publish this plugin to merchants as production-ready yet; I5.4 packaging, install/upgrade checks, and staging/live Woo checkout acceptance remain.
 
 ## Architecture
 
@@ -97,9 +97,9 @@ expired / error
 
 Retries with the same `event_id` are idempotent. Lower `payment_version` events cannot roll back newer merchant state. A higher-version reorg can move PEPEW state backward; the plugin reacts according to the safe policy above.
 
-## HPOS design
+## HPOS / order storage
 
-I5.1 uses WooCommerce order CRUD only:
+The adapter uses WooCommerce order CRUD only:
 
 - `wc_get_order()`
 - `WC_Order::get_meta()`
@@ -108,11 +108,11 @@ I5.1 uses WooCommerce order CRUD only:
 
 It intentionally does not use direct `wp_posts`/`wp_postmeta` writes or direct SQL.
 
-WooCommerce 11.1.2 is the current stable core release as of 2026-09-26, but this skeleton does not claim HPOS/runtime compatibility until it is tested in an actual WooCommerce environment.
+I5.3 runtime acceptance passed on WordPress 7.1.2 / WooCommerce 11.1.2 with both legacy order storage and HPOS enabled. The plugin therefore declares `custom_order_tables` compatibility and sets `WC tested up to: 11.1.2`.
 
 ## Checkout Blocks
 
-WooCommerce's current Block Checkout payment integration requires a separate server-side `AbstractPaymentMethodType` integration plus client-side `registerPaymentMethod` registration. I5.1 does not fake compatibility with blocks; I5.3 will add and test it.
+I5.3 implements the current WooCommerce Blocks payment integration with server-side `AbstractPaymentMethodType` registration and client-side `registerPaymentMethod()`. Payment execution continues through the existing `WC_Payment_Gateway` business logic rather than duplicating payment authority.
 
 ## Development checks
 
@@ -130,5 +130,5 @@ CI also rejects direct order-table/post-meta write APIs in the adapter.
 ## Next increments
 
 - **I5.2** — complete: signed webhook receiver, durable event/version ordering, and safe Woo order transitions
-- **I5.3** — Checkout Block integration + real WordPress/WooCommerce HPOS enabled/disabled test matrix, then compatibility declaration
-- **I5.4** — installable ZIP/package checks, merchant setup guide, production acceptance
+- **I5.3** — complete: Checkout Block integration + WordPress 7.1.2 / WooCommerce 11.1.2 legacy+HPOS runtime matrix and compatibility declarations
+- **I5.4** — installable ZIP/package checks, merchant setup/upgrade/uninstall guide, and staging/live Woo production acceptance
