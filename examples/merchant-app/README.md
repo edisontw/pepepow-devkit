@@ -172,3 +172,9 @@ No Redis, PostgreSQL, Kafka, or queue is required for this reference flow.
 ## Full production Quick Start
 
 See `../../docs/MERCHANT_QUICK_START.md` for credentials, registration, recovery, webhook framework patterns, fulfillment, logging/privacy, and version-compatibility guidance.
+
+## Testing strategy
+
+Default development/CI uses a deterministic in-process Payment API + signed webhook contract harness with no network or production credentials. See `../../docs/TESTING_AND_SANDBOX.md`.
+
+An operator-only bounded live smoke is available through `npm run smoke:live`, but it is guarded, never runs in CI, and creates one short-lived live payment intent without sending funds.
