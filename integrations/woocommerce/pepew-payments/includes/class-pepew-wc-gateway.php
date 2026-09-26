@@ -9,6 +9,7 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 	private const META_VERSION     = '_pepew_payment_version';
 	private const META_STATUS      = '_pepew_payment_status';
 	private const META_CHECKOUT    = '_pepew_checkout_url';
+	private const META_AMOUNT      = '_pepew_amount';
 
 	public function __construct() {
 		$this->id                 = 'pepew';
@@ -118,10 +119,16 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 	}
 
 	private function create_or_reuse_checkout( WC_Order $order ): array {
+		$current_amount      = wc_format_decimal( (string) $order->get_total(), 8 );
+		$stored_amount       = (string) $order->get_meta( self::META_AMOUNT, true );
 		$existing_payment_id = (string) $order->get_meta( self::META_PAYMENT_ID, true );
 		$existing_checkout   = (string) $order->get_meta( self::META_CHECKOUT, true );
 
 		if ( '' !== $existing_payment_id ) {
+			if ( '' === $stored_amount || $stored_amount !== $current_amount ) {
+				throw new RuntimeException( 'WooCommerce order amount changed after PEPEW payment creation.' );
+			}
+
 			$checkout = '' !== $existing_checkout
 				? $existing_checkout
 				: $this->checkout_url( $existing_payment_id );
@@ -130,6 +137,10 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 				'result'   => 'success',
 				'redirect' => $checkout,
 			);
+		}
+
+		if ( '' !== $stored_amount && $stored_amount !== $current_amount ) {
+			throw new RuntimeException( 'WooCommerce order amount changed after PEPEW create identity was reserved.' );
 		}
 
 		$site_url        = home_url( '/' );
@@ -147,7 +158,12 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 			$order->update_meta_data( self::META_IDEMPOTENCY, $idempotency_key );
 		}
 
-		// Persist retry/business identity before any remote create request.
+		if ( '' === $stored_amount ) {
+			$stored_amount = $current_amount;
+			$order->update_meta_data( self::META_AMOUNT, $stored_amount );
+		}
+
+		// Persist retry/business identity and exact amount before any remote create request.
 		$order->save();
 
 		$client = new PEPEW_WC_API_Client(
@@ -157,7 +173,7 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 
 		$payload = array(
 			'address'            => trim( (string) $this->get_option( 'receive_address', '' ) ),
-			'amount'             => wc_format_decimal( (string) $order->get_total(), 8 ),
+			'amount'             => $stored_amount,
 			'merchant_reference' => $reference,
 			'confirmations'      => max( 1, (int) $this->get_option( 'confirmations', 3 ) ),
 			'expires_in'         => max( 60, min( 86400, (int) $this->get_option( 'expires_in', 900 ) ) ),
@@ -184,6 +200,10 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 
 		if ( $payment['merchant_reference'] !== $reference ) {
 			throw new RuntimeException( 'Recovered payment does not belong to this WooCommerce order.' );
+		}
+
+		if ( (string) $payment['amount'] !== $stored_amount ) {
+			throw new RuntimeException( 'PEPEW payment amount does not match the WooCommerce order snapshot.' );
 		}
 
 		$checkout = $this->checkout_url( $payment['payment_id'] );
