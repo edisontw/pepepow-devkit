@@ -112,12 +112,20 @@ Phase I distribution policy is documented in:
 docs/SDK_DISTRIBUTION.md
 ```
 
-The intended reusable-package channel is the public npm registry, but public
-publication is still gated. The merchant package remains `private: true` until
-the project explicitly confirms package licensing plus npm `@pepepow` scope
-ownership/release credentials. CI now validates the actual packed artifact in
-a clean Node consumer so registry publication does not become the first time
-the install surface is exercised.
+The reusable SDK code is MIT-licensed and both SDK package manifests are
+public-release-ready. Normal pushes to `main` never publish npm packages. The
+remaining external release gate is npm `@pepepow` scope ownership/publisher
+setup. CI validates packed artifacts in clean Node consumers before registry
+release.
+
+## License
+
+PEPEPOW DevKit and the reusable SDK artifacts are licensed under the MIT
+License. See `LICENSE`.
+
+Public SDK distribution does not change secret boundaries: mnemonic/private
+keys, merchant API keys, webhook signing secrets, npm credentials, and
+production infrastructure secrets must never be committed or packaged.
 
 ## Security boundary
 
