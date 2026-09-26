@@ -158,10 +158,12 @@ a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix with both legacy
 order storage and HPOS enabled. The plugin now declares both
 `cart_checkout_blocks` and `custom_order_tables` compatibility.
 
-The next coherent increment is I5.4: produce and install-test the distributable
-plugin package, complete merchant setup/upgrade/uninstall documentation, and
-perform staging/live WooCommerce checkout acceptance before production-ready
-status.
+I5.4 automated acceptance is now complete: CI builds an allowlist-based
+WooCommerce ZIP, install-tests it in a clean WordPress/WooCommerce runtime,
+verifies dependency/upgrade/uninstall behavior, and exercises retry/recovery/
+webhook/reorg flows in both legacy and HPOS modes. The remaining WooCommerce
+gate is one externally reachable staging/live paid checkout E2E before the
+adapter is called production-ready.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
 it does not block I5 adapter work.
