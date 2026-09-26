@@ -22,6 +22,8 @@ $key       = PEPEW_WC_Order_Identity::idempotency_key( $site_a, 1234 );
 
 expect_same( 'woo:' . $hash_a . ':1234', $reference, 'merchant reference' );
 expect_same( 'woo:create:' . $hash_a . ':1234:v1', $key, 'idempotency key' );
+expect_same( 1234, PEPEW_WC_Order_Identity::order_id_from_reference( $site_a, $reference ), 'reference parser' );
+expect_same( null, PEPEW_WC_Order_Identity::order_id_from_reference( $site_b, $reference ), 'cross-site reference parser' );
 
 if ( PEPEW_WC_Order_Identity::merchant_reference( $site_b, 1234 ) === $reference ) {
 	fwrite( STDERR, "site isolation failed\n" );

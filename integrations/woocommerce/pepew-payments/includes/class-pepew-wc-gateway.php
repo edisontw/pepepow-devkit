@@ -3,14 +3,6 @@
 defined( 'ABSPATH' ) || exit;
 
 final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
-	private const META_REFERENCE   = '_pepew_merchant_reference';
-	private const META_IDEMPOTENCY = '_pepew_idempotency_key';
-	private const META_PAYMENT_ID  = '_pepew_payment_id';
-	private const META_VERSION     = '_pepew_payment_version';
-	private const META_STATUS      = '_pepew_payment_status';
-	private const META_CHECKOUT    = '_pepew_checkout_url';
-	private const META_AMOUNT      = '_pepew_amount';
-
 	public function __construct() {
 		$this->id                 = 'pepew';
 		$this->method_title       = 'PEPEW';
@@ -63,6 +55,11 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 				'title'       => 'Merchant API key',
 				'type'        => 'password',
 				'description' => 'Server-side only. Never expose this value to browser JavaScript or logs.',
+			),
+			'webhook_secret' => array(
+				'title'       => 'Webhook signing secret',
+				'type'        => 'password',
+				'description' => 'Server-side only. Register this receiver URL with PEPEW Payment Platform: ' . rest_url( 'pepew/v1/webhook' ),
 			),
 			'receive_address' => array(
 				'title' => 'PEPEW receiving address',
@@ -120,9 +117,9 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 
 	private function create_or_reuse_checkout( WC_Order $order ): array {
 		$current_amount      = wc_format_decimal( (string) $order->get_total(), 8 );
-		$stored_amount       = (string) $order->get_meta( self::META_AMOUNT, true );
-		$existing_payment_id = (string) $order->get_meta( self::META_PAYMENT_ID, true );
-		$existing_checkout   = (string) $order->get_meta( self::META_CHECKOUT, true );
+		$stored_amount       = (string) $order->get_meta( PEPEW_WC_Meta::AMOUNT, true );
+		$existing_payment_id = (string) $order->get_meta( PEPEW_WC_Meta::PAYMENT_ID, true );
+		$existing_checkout   = (string) $order->get_meta( PEPEW_WC_Meta::CHECKOUT, true );
 
 		if ( '' !== $existing_payment_id ) {
 			if ( '' === $stored_amount || $stored_amount !== $current_amount ) {
@@ -145,22 +142,22 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 
 		$site_url        = home_url( '/' );
 		$order_id        = (int) $order->get_id();
-		$reference       = (string) $order->get_meta( self::META_REFERENCE, true );
-		$idempotency_key = (string) $order->get_meta( self::META_IDEMPOTENCY, true );
+		$reference       = (string) $order->get_meta( PEPEW_WC_Meta::REFERENCE, true );
+		$idempotency_key = (string) $order->get_meta( PEPEW_WC_Meta::IDEMPOTENCY, true );
 
 		if ( '' === $reference ) {
 			$reference = PEPEW_WC_Order_Identity::merchant_reference( $site_url, $order_id );
-			$order->update_meta_data( self::META_REFERENCE, $reference );
+			$order->update_meta_data( PEPEW_WC_Meta::REFERENCE, $reference );
 		}
 
 		if ( '' === $idempotency_key ) {
 			$idempotency_key = PEPEW_WC_Order_Identity::idempotency_key( $site_url, $order_id );
-			$order->update_meta_data( self::META_IDEMPOTENCY, $idempotency_key );
+			$order->update_meta_data( PEPEW_WC_Meta::IDEMPOTENCY, $idempotency_key );
 		}
 
 		if ( '' === $stored_amount ) {
 			$stored_amount = $current_amount;
-			$order->update_meta_data( self::META_AMOUNT, $stored_amount );
+			$order->update_meta_data( PEPEW_WC_Meta::AMOUNT, $stored_amount );
 		}
 
 		// Persist retry/business identity and exact amount before any remote create request.
@@ -208,10 +205,10 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 
 		$checkout = $this->checkout_url( $payment['payment_id'] );
 
-		$order->update_meta_data( self::META_PAYMENT_ID, $payment['payment_id'] );
-		$order->update_meta_data( self::META_VERSION, (int) $payment['version'] );
-		$order->update_meta_data( self::META_STATUS, (string) $payment['status'] );
-		$order->update_meta_data( self::META_CHECKOUT, $checkout );
+		$order->update_meta_data( PEPEW_WC_Meta::PAYMENT_ID, $payment['payment_id'] );
+		$order->update_meta_data( PEPEW_WC_Meta::VERSION, (int) $payment['version'] );
+		$order->update_meta_data( PEPEW_WC_Meta::STATUS, (string) $payment['status'] );
+		$order->update_meta_data( PEPEW_WC_Meta::CHECKOUT, $checkout );
 		$order->save();
 
 		return array(

@@ -125,8 +125,11 @@ jobs:
       - name: Lint WooCommerce adapter PHP
         run: find integrations/woocommerce/pepew-payments -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - name: Test WooCommerce order identity
-        run: php integrations/woocommerce/tests/identity-test.php
+      - name: Test WooCommerce adapter units
+        run: |
+          php integrations/woocommerce/tests/identity-test.php
+          php integrations/woocommerce/tests/webhook-verifier-test.php
+          php integrations/woocommerce/tests/order-state-test.php
 
       - name: Guard HPOS-safe order persistence
         run: |

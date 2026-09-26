@@ -22,6 +22,16 @@ final class PEPEW_WC_Order_Identity {
 		return sprintf( 'woo:create:%s:%d:v1', self::site_hash( $site_url ), $order_id );
 	}
 
+	public static function order_id_from_reference( string $site_url, string $reference ): ?int {
+		$pattern = '/^woo:' . preg_quote( self::site_hash( $site_url ), '/' ) . ':([1-9][0-9]*)$/';
+		if ( 1 !== preg_match( $pattern, $reference, $matches ) ) {
+			return null;
+		}
+
+		$order_id = (int) $matches[1];
+		return $order_id > 0 ? $order_id : null;
+	}
+
 	private static function require_order_id( int $order_id ): void {
 		if ( $order_id < 1 ) {
 			throw new InvalidArgumentException( 'order_id must be positive' );

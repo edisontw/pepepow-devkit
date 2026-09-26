@@ -17,8 +17,11 @@ define( 'PEPEW_WC_VERSION', '0.1.0-dev' );
 define( 'PEPEW_WC_PLUGIN_FILE', __FILE__ );
 define( 'PEPEW_WC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
+require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-meta.php';
 require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-order-identity.php';
+require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-order-state.php';
 require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-api-client.php';
+require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-webhook-verifier.php';
 
 add_action(
 	'before_woocommerce_init',
@@ -68,6 +71,9 @@ add_action(
 		}
 
 		require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-gateway.php';
+		require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-webhook-handler.php';
+
+		add_action( 'rest_api_init', array( 'PEPEW_WC_Webhook_Handler', 'register_route' ) );
 
 		add_filter(
 			'woocommerce_payment_gateways',
