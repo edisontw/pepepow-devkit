@@ -108,6 +108,34 @@ jobs:
           node --check examples/webhooks/express.mjs
           node --check examples/webhooks/fastify.mjs
 
+  woocommerce-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          coverage: none
+
+      - name: Lint WooCommerce adapter PHP
+        run: find integrations/woocommerce/pepew-payments -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Test WooCommerce order identity
+        run: php integrations/woocommerce/tests/identity-test.php
+
+      - name: Guard HPOS-safe order persistence
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'update_post_meta|add_post_meta|delete_post_meta|wp_update_post|\\$wpdb' integrations/woocommerce/pepew-payments; then
+            echo "WooCommerce adapter must use WooCommerce order CRUD, not direct post/order storage writes."
+            exit 1
+          fi
+
   publish-pepewpay:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: devkit
