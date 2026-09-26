@@ -20,6 +20,10 @@ examples/
   merchant-node/
   merchant-app/
 
+integrations/
+  woocommerce/
+    pepew-payments/
+
 test-vectors/
   payment-uri-v1.json
 ```
@@ -181,3 +185,4 @@ As of 2026-09-26:
 - Phase I I2 adds a runnable Node + SQLite merchant application with durable idempotency, create recovery, webhook deduplication, and reorg-safe payment_version handling
 - Phase I I3 adds a production merchant Quick Start, secure webhook registration helper, and Express/Fastify exact-raw-body integration patterns
 - Phase I I4 adds deterministic local contract testing plus an explicit bounded live-smoke path without a permanent sandbox service
+- Phase I I5.1 adds the first WooCommerce classic-checkout gateway skeleton with stable order identity, exact amount snapshotting, Payment API create/recovery, and PepewPay redirect; webhook/order lifecycle is next
