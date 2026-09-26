@@ -131,6 +131,9 @@ jobs:
           php integrations/woocommerce/tests/webhook-verifier-test.php
           php integrations/woocommerce/tests/order-state-test.php
 
+      - name: Check Checkout Blocks client script
+        run: node --check integrations/woocommerce/pepew-payments/assets/js/blocks.js
+
       - name: Guard HPOS-safe order persistence
         run: |
           set -euo pipefail
@@ -138,6 +141,61 @@ jobs:
             echo "WooCommerce adapter must use WooCommerce order CRUD, not direct post/order storage writes."
             exit 1
           fi
+
+  woocommerce-runtime:
+    name: WooCommerce runtime (${{ matrix.storage }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        storage:
+          - legacy
+          - hpos
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install wp-env
+        run: npm install --no-audit --no-fund
+        working-directory: integrations/woocommerce
+
+      - name: Start WordPress 7.1.2 / WooCommerce 11.1.2
+        run: npx --no-install wp-env start
+        working-directory: integrations/woocommerce
+
+      - name: Configure order storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.storage }}" = "hpos" ]; then
+            npx --no-install wp-env run cli "wp wc hpos enable --for-new-shop"
+          else
+            npx --no-install wp-env run cli "wp wc hpos disable"
+          fi
+          npx --no-install wp-env run cli "wp option update pepew_test_expected_hpos ${{ matrix.storage }}"
+          npx --no-install wp-env run cli "wp wc hpos status"
+        working-directory: integrations/woocommerce
+
+      - name: Run WooCommerce runtime smoke
+        run: npx --no-install wp-env run cli "wp eval-file wp-content/plugins/pepew-payments/wp-env/runtime-smoke.php"
+        working-directory: integrations/woocommerce
+
+      - name: Show wp-env logs on failure
+        if: failure()
+        run: npx --no-install wp-env logs --watch=false
+        working-directory: integrations/woocommerce
+
+      - name: Stop wp-env
+        if: always()
+        run: npx --no-install wp-env stop
+        working-directory: integrations/woocommerce
 
   publish-pepewpay:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
