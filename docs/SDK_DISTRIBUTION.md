@@ -142,9 +142,15 @@ zero-network contract harness for normal development/CI plus an explicit
 operator-only live smoke path. Production webhook SSRF/HTTPS protections remain
 unchanged, and no always-on sandbox service has been introduced.
 
-The next coherent Phase I increment is I5: build the first real platform
-adapter, starting with WooCommerce, on top of the generic merchant contracts
-without moving payment authority into the plugin.
+I5 has started with a WooCommerce adapter under
+`integrations/woocommerce/pepew-payments/`. I5.1 is complete: classic checkout
+can create/recover a PEPEW payment intent, persist stable Woo order identity
+and exact amount snapshot state through WooCommerce CRUD, and redirect to
+PepewPay without moving payment authority into WordPress.
+
+The next coherent increment is I5.2: signed webhook receipt plus durable
+WooCommerce order lifecycle updates using `event_id`/`payment_version`
+semantics.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
 it does not block I5 adapter work.
