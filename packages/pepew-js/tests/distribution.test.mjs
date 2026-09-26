@@ -17,9 +17,9 @@ function run(command, args, options = {}) {
   });
 }
 
-test("merchant package metadata is public-release ready", async () => {
+test("pepew-js package metadata is public-release ready", async () => {
   const manifest = JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"));
-  assert.equal(manifest.name, "@pepepow/pepewpay-merchant");
+  assert.equal(manifest.name, "@pepepow/pepew-js");
   assert.match(manifest.version, /^0\.\d+\.\d+$/);
   assert.equal(manifest.private, false);
   assert.equal(manifest.license, "MIT");
@@ -27,12 +27,11 @@ test("merchant package metadata is public-release ready", async () => {
   assert.equal(manifest.publishConfig?.registry, "https://registry.npmjs.org/");
   assert.equal(manifest.engines.node, ">=20");
   assert.deepEqual(manifest.files, ["dist"]);
-  assert.equal(manifest.sideEffects, false);
-  assert.equal(manifest.repository?.directory, "packages/pepewpay-merchant");
+  assert.equal(manifest.repository?.directory, "packages/pepew-js");
 });
 
-test("packed merchant SDK installs and imports in a clean Node consumer", async (t) => {
-  const scratch = await mkdtemp(join(tmpdir(), "pepewpay-merchant-pack-"));
+test("packed pepew-js installs and imports in a clean Node consumer", async (t) => {
+  const scratch = await mkdtemp(join(tmpdir(), "pepew-js-pack-"));
   t.after(async () => rm(scratch, { recursive: true, force: true }));
 
   const [packed] = JSON.parse(run(
@@ -56,9 +55,9 @@ test("packed merchant SDK installs and imports in a clean Node consumer", async 
   ], { cwd: consumer });
 
   const smoke = [
-    'import { buildCheckoutUrl } from "@pepepow/pepewpay-merchant";',
-    'const value = buildCheckoutUrl("pay_abcdefgh");',
-    'if (value !== "https://pay.pepepow.net/?payment_id=pay_abcdefgh") process.exit(1);',
+    'import { formatPaymentUri } from "@pepepow/pepew-js";',
+    'const value = formatPaymentUri({ address: "PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb", amount: "1" });',
+    'if (!value.includes("amount=1")) process.exit(1);',
   ].join("\n");
   run(process.execPath, ["--input-type=module", "--eval", smoke], { cwd: consumer });
 });

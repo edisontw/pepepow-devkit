@@ -23,7 +23,9 @@ generated `pepewpay-dist` branch. It is not a server SDK dependency.
 Mnemonic, private-key derivation, transaction signing, merchant API keys, and
 webhook signing secrets must not be embedded into published package contents.
 
-## 2. Versioning
+## 2. License and versioning
+
+The DevKit and reusable SDK package artifacts use the MIT License.
 
 Packages use independent Semantic Versioning.
 
@@ -36,12 +38,9 @@ Current baseline:
 
 Before 1.0:
 
-- breaking public API changes require a minor-version bump, for example
-  `0.1.x -> 0.2.0`
-- compatible fixes and compatible additive changes should normally use a
-  patch-version bump
-- release notes must call out behavior or contract changes that affect payment
-  correctness, webhook verification, retry/idempotency, or reorg handling
+- breaking public API changes require a minor-version bump
+- compatible fixes and compatible additive changes should normally use a patch bump
+- release notes must call out changes affecting payment correctness, webhook verification, retry/idempotency, or reorg handling
 
 A package version does not change the Payment API authority model. The
 transaction-level Payment Platform remains authoritative.
@@ -50,9 +49,10 @@ transaction-level Payment Platform remains authoritative.
 
 The intended canonical reusable-package channel is the public npm registry.
 
-Expected install shape after the first public release:
+Expected install shape after public release:
 
 ```bash
+npm install @pepepow/pepew-js
 npm install @pepepow/pepewpay-merchant
 ```
 
@@ -60,74 +60,75 @@ GitHub `main` remains the source of truth for active development. Registry
 releases must come from a tested tagged commit, not from an arbitrary local
 working tree.
 
-The package metadata already declares public scoped-package access through
-`publishConfig.access=public`, but `private: true` remains a hard release
-gate.
+Both SDK manifests are public-release-ready with MIT licensing,
+`publishConfig.access=public`, and the canonical npm registry. Normal pushes
+to `main` do not publish npm packages.
 
-## 4. Public-release gate
+## 4. Remaining release gate
 
-Do not remove `private: true` or publish a registry release until both items
-below are explicitly confirmed:
+The remaining external gate before the first npm release is:
 
-1. the public package license for the distributed SDK code
-2. npm `@pepepow` scope ownership plus the release credential/trusted-publishing path
-
-This repository does not guess or silently assign a software license.
+1. confirm npm `@pepepow` scope ownership/control
+2. choose the first-publish authentication path
+3. after the package exists, prefer npm trusted publishing from GitHub Actions
+   using OIDC rather than a long-lived write token
 
 Release credentials must stay in npm/GitHub secret or trusted-publishing
 facilities. Never commit npm tokens.
 
-At release time, also verify that the intended package name and scope are
-available/controlled by the project.
+If the `@pepepow` scope cannot be obtained, choose a deliberate alternate
+scope rather than silently publishing under an unrelated namespace.
+
+Repository visibility is separate. Do not make the entire Git repository
+public until repository history has also been checked for removed credentials
+or sensitive deployment material.
 
 ## 5. Pack/install verification
 
-Phase I I1 requires the package artifact to be tested before registry
-publication.
-
-The merchant package test suite now verifies that:
+The SDK package test suites verify that:
 
 - metadata names the expected scoped package and Node.js support level
-- the public release gate is still active
-- the tarball includes `README.md`, `package.json`, and built `dist/` output
+- package license is MIT and public registry access is explicit
+- tarballs include `LICENSE`, `README.md`, `package.json`, and built `dist/`
 - source and test trees are not shipped
-- the tarball installs into a clean temporary Node consumer
-- the consumer can import and execute the public package export
+- tarballs install into clean temporary Node consumers
+- consumers can import and execute the public package exports
 
 Run:
 
 ```bash
-cd packages/pepewpay-merchant
+cd packages/pepew-js
+npm install
+npm test
+
+cd ../pepewpay-merchant
 npm install
 npm test
 ```
 
-This check uses only the locally produced tarball. It does not require a
-registry publish and does not add any production VM dependency.
+This uses only locally produced tarballs. It does not require a registry
+publish and adds no production VM dependency.
 
 ## 6. Release sequence
 
-The minimum public release sequence is:
-
 ```text
 main green
-  -> confirm license + npm scope/release ownership
-  -> remove private release gate
+  -> confirm npm scope/release ownership
   -> run package tests and pack/install smoke
   -> create package-specific version commit/tag
   -> publish public npm package
   -> verify clean registry install/import
+  -> configure npm trusted publishing for subsequent releases
   -> record release in README / roadmap
 ```
 
-A future release workflow may automate the tagged publish step, but only after
-the ownership/licensing gate is resolved. Prefer npm trusted publishing or
-GitHub-managed secrets over long-lived repository credentials.
+Prefer npm trusted publishing with GitHub Actions OIDC over long-lived registry
+credentials.
 
 ## 7. Next Phase I increment
 
-After the distribution gate is resolved, the next coherent implementation is a
-complete runnable merchant sample application with a small durable SQLite
-order/event store. It should demonstrate the full create -> checkout -> webhook
-lifecycle without introducing Redis, PostgreSQL, queues, or framework-specific
-payment authority.
+After the external npm ownership gate is resolved, continue with the complete
+runnable merchant sample application and its small durable SQLite order/event
+store. The sample must demonstrate the full create -> checkout -> webhook
+lifecycle without Redis, PostgreSQL, queues, or framework-specific payment
+authority.

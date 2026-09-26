@@ -19,7 +19,8 @@ npm install
 npm test
 ```
 
-The production PEPEW Light host does not need Node.js to run this package. Applications can be built in CI or on a development machine and deployed as static artifacts.
+The production PEPEW Light host does not need Node.js to run this package.
+Applications can be built in CI or on a development machine.
 
 ## Example
 
@@ -40,6 +41,14 @@ const payment = parsePaymentUri(uri);
 console.log(payment.amountSats); // 1234000000n
 ```
 
+## Distribution
+
+The package is MIT-licensed and configured for eventual public npm
+distribution. Publishing remains an explicit release action; normal pushes to
+`main` do not publish npm packages.
+
+See `../../docs/SDK_DISTRIBUTION.md`.
+
 ## Specification
 
 See:
@@ -48,5 +57,3 @@ See:
 ../../specs/payment-uri/v1.md
 ../../test-vectors/payment-uri-v1.json
 ```
-
-The package is intentionally marked private during the initial protocol phase. Package publication/versioning can be enabled after the v1 API is reviewed and stabilized.
