@@ -153,9 +153,15 @@ receiver, durable event/version ordering, race-safe payment binding, and
 reorg-aware Woo order transitions that avoid automatically resurrecting
 cancelled/refunded business state.
 
-The next coherent increment is I5.3: Checkout Block integration plus a real
-WordPress/WooCommerce matrix with HPOS enabled/disabled before compatibility is
-declared.
+I5.3 is complete: the Woo adapter now supports Checkout Blocks and has passed
+a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix with both legacy
+order storage and HPOS enabled. The plugin now declares both
+`cart_checkout_blocks` and `custom_order_tables` compatibility.
+
+The next coherent increment is I5.4: produce and install-test the distributable
+plugin package, complete merchant setup/upgrade/uninstall documentation, and
+perform staging/live WooCommerce checkout acceptance before production-ready
+status.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
 it does not block I5 adapter work.
