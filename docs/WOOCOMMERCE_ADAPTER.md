@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-26
 
-Status: **I5.1 in progress**
+Status: **I5.1 complete — I5.2 next**
 
 Location:
 
@@ -56,6 +56,7 @@ Compatibility declarations must reflect actual testing rather than intent.
 - [x] redirect shopper to PepewPay
 - [x] explicitly declare Checkout Blocks incompatible for this increment
 - [x] add PHP lint, identity tests, and no-direct-order-storage guard
+- [x] CI verify PHP syntax, deterministic order identity, and no direct order-storage writes
 - [ ] test inside an actual WordPress/WooCommerce runtime before any compatibility claim
 
 Merchant identity format:
@@ -68,6 +69,14 @@ Idempotency-Key    = woo:create:<sha256(site-url)[0:16]>:<order-id>:v1
 This avoids PII and makes the same Woo order stable across browser retries while
 reducing collision risk if one Payment Platform credential eventually serves
 more than one Woo store.
+
+## I5.1 verification
+
+- DevKit commits: `abb67d5c9e8cbab98196b9f204c2bbe56154dad7`, `7d7bdbeeacc3354c9ce2e14d943d3dbb70e91d60`, `522c0fea18b85003ffe0f6e3cc5d707f9f3eea3f`
+- GitHub Actions run `36223238329` completed successfully
+- WooCommerce adapter job passed PHP lint, deterministic identity tests, and the no-direct-order-storage guard
+- Existing merchant-sample, DevKit/SDK/PepewPay, and `pepewpay-dist` jobs remained green
+- I5.1 also snapshots the exact 8-decimal Woo order amount before remote create and fails closed if the order amount later differs from the stored/payment amount
 
 ## I5.2 — webhook and order lifecycle
 
