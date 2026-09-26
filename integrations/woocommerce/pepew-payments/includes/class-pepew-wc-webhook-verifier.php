@@ -59,7 +59,7 @@ final class PEPEW_WC_Webhook_Verifier {
 			throw new PEPEW_WC_Webhook_Verification_Exception( 'signature_mismatch' );
 		}
 
-		$event = json_decode( $raw_body, true );
+		$event = json_decode( $raw_body, true, 512, JSON_BIGINT_AS_STRING );
 		if ( ! is_array( $event ) || JSON_ERROR_NONE !== json_last_error() ) {
 			throw new PEPEW_WC_Webhook_Verification_Exception( 'invalid_json' );
 		}
@@ -95,10 +95,14 @@ final class PEPEW_WC_Webhook_Verifier {
 			throw new PEPEW_WC_Webhook_Verification_Exception( 'missing_merchant_reference' );
 		}
 
+		if ( ! array_key_exists( 'amount_sats', $event['data'] ) ) {
+			throw new PEPEW_WC_Webhook_Verification_Exception( 'invalid_amount' );
+		}
+
+		$amount_sats = $event['data']['amount_sats'];
 		if (
-			! array_key_exists( 'amount_sats', $event['data'] ) ||
-			! is_int( $event['data']['amount_sats'] ) ||
-			$event['data']['amount_sats'] <= 0
+			( ! is_int( $amount_sats ) && ! is_string( $amount_sats ) ) ||
+			1 !== preg_match( '/^[1-9][0-9]*$/', (string) $amount_sats )
 		) {
 			throw new PEPEW_WC_Webhook_Verification_Exception( 'invalid_amount' );
 		}
