@@ -137,9 +137,14 @@ secure webhook registration, timeout/recovery guidance, fulfillment/logging
 boundaries, version compatibility, and copyable Express/Fastify raw-body
 patterns under `examples/webhooks/`.
 
-The next coherent increment is I4: define the developer test/sandbox path
-without weakening webhook SSRF protections or creating an always-on sandbox
-before demand justifies it.
+I4 is complete in `docs/TESTING_AND_SANDBOX.md` with a deterministic,
+zero-network contract harness for normal development/CI plus an explicit
+operator-only live smoke path. Production webhook SSRF/HTTPS protections remain
+unchanged, and no always-on sandbox service has been introduced.
+
+The next coherent Phase I increment is I5: build the first real platform
+adapter, starting with WooCommerce, on top of the generic merchant contracts
+without moving payment authority into the plugin.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
-it does not block I4 work.
+it does not block I5 adapter work.
