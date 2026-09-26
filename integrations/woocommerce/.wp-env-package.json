@@ -6,9 +6,6 @@
   "plugins": [
     "https://downloads.wordpress.org/plugin/woocommerce.11.1.2.zip"
   ],
-  "mappings": {
-    "wp-content/uploads/pepew-package": "../dist"
-  },
   "config": {
     "WP_DEBUG": true,
     "WP_DEBUG_LOG": true,
