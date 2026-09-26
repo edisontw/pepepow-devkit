@@ -18,6 +18,7 @@ apps/
 
 examples/
   merchant-node/
+  merchant-app/
 
 test-vectors/
   payment-uri-v1.json
@@ -112,6 +113,12 @@ Phase I distribution policy is documented in:
 docs/SDK_DISTRIBUTION.md
 ```
 
+The runnable merchant application is:
+
+```text
+examples/merchant-app/
+```
+
 The reusable SDK code is MIT-licensed and both SDK package manifests are
 public-release-ready. Normal pushes to `main` never publish npm packages. The
 remaining external release gate is npm `@pepepow` scope ownership/publisher
@@ -158,4 +165,5 @@ As of 2026-09-26:
 - production validation on 2026-09-22 completed a new 0.1 PEPEW checkout through web-wallet handoff, broadcast, `paid_unconfirmed`, and `paid_confirmed`
 - Phase H3 reference merchant flow is complete in `pepepow-electrumx-service`
 - Phase H4 adds the server-side `@pepepow/pepewpay-merchant` helpers and durable-store composition examples
-- Phase I is in progress; I1 defines SDK distribution/versioning and validates the packed merchant artifact before public registry release
+- Phase I I1 defines MIT/public-ready SDK distribution with npm scope ownership still external
+- Phase I I2 adds a runnable Node + SQLite merchant application with durable idempotency, create recovery, webhook deduplication, and reorg-safe payment_version handling

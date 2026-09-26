@@ -125,10 +125,16 @@ main green
 Prefer npm trusted publishing with GitHub Actions OIDC over long-lived registry
 credentials.
 
-## 7. Next Phase I increment
+## 7. Phase I implementation status
 
-After the external npm ownership gate is resolved, continue with the complete
-runnable merchant sample application and its small durable SQLite order/event
-store. The sample must demonstrate the full create -> checkout -> webhook
-lifecycle without Redis, PostgreSQL, queues, or framework-specific payment
-authority.
+I2 is complete in `examples/merchant-app/` with a small durable SQLite
+order/event store, stable create identity, uncertain-create recovery,
+exact-raw-body webhook verification, durable event deduplication, and
+reorg-safe `payment_version` ordering.
+
+The next coherent increment is I3: a concise production integration guide and
+Quick Start that leads an ordinary merchant from credentials and webhook setup
+to the first checkout while preserving the same server-side secret boundary.
+
+The external npm `@pepepow` scope ownership task can proceed independently;
+it does not block I3 documentation/example work.
