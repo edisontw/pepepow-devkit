@@ -132,9 +132,14 @@ order/event store, stable create identity, uncertain-create recovery,
 exact-raw-body webhook verification, durable event deduplication, and
 reorg-safe `payment_version` ordering.
 
-The next coherent increment is I3: a concise production integration guide and
-Quick Start that leads an ordinary merchant from credentials and webhook setup
-to the first checkout while preserving the same server-side secret boundary.
+I3 is complete in `docs/MERCHANT_QUICK_START.md` with production configuration,
+secure webhook registration, timeout/recovery guidance, fulfillment/logging
+boundaries, version compatibility, and copyable Express/Fastify raw-body
+patterns under `examples/webhooks/`.
+
+The next coherent increment is I4: define the developer test/sandbox path
+without weakening webhook SSRF protections or creating an always-on sandbox
+before demand justifies it.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
-it does not block I3 documentation/example work.
+it does not block I4 work.
