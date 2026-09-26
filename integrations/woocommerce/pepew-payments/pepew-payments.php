@@ -1,6 +1,7 @@
 <?php
 /**
  * Plugin Name: PEPEW Payments for WooCommerce
+ * Plugin URI: https://github.com/edisontw/pepepow-devkit/tree/main/integrations/woocommerce/pepew-payments
  * Description: Redirect WooCommerce orders to PEPEW Payment Platform / PepewPay.
  * Version: 0.1.0-dev
  * Requires at least: 6.7
@@ -8,8 +9,14 @@
  * Requires Plugins: woocommerce
  * WC requires at least: 8.2
  * WC tested up to: 11.1.2
+ * Author: PEPEPOW contributors
+ * Author URI: https://pepepow.net/
+ * Developer: PEPEPOW contributors
+ * Developer URI: https://pepepow.net/
+ * Update URI: https://github.com/edisontw/pepepow-devkit/tree/main/integrations/woocommerce/pepew-payments
  * Text Domain: pepew-payments
  * License: MIT
+ * License URI: https://opensource.org/license/mit
  */
 
 defined( 'ABSPATH' ) || exit;
