@@ -36,7 +36,15 @@ npm install
 npm test
 ```
 
-The package currently remains private while the merchant API is stabilized.
+The package currently remains private as an explicit public-release gate.
+
+The intended canonical distribution channel is the public npm registry under
+the existing package name. Before that gate is removed, the project must
+explicitly confirm the package license and npm `@pepepow` scope
+ownership/release credentials. CI already builds, packs, installs, and imports
+the tarball in a clean Node consumer.
+
+See `../../docs/SDK_DISTRIBUTION.md` for the versioning and release contract.
 
 ## Create payment
 

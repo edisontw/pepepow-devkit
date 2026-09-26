@@ -29,6 +29,8 @@ Primary development sequence:
 pepew-js
   -> PEPEW Payment URI
   -> PepewPay
+  -> merchant SDK/helpers
+  -> Phase I merchant onboarding / distribution
 ```
 
 The server-side Payment/Event Gateway and webhook infrastructure belong in `edisontw/pepepow-electrumx-service`.
@@ -104,6 +106,19 @@ packages/pepewpay-merchant/README.md
 examples/merchant-node/README.md
 ```
 
+Phase I distribution policy is documented in:
+
+```text
+docs/SDK_DISTRIBUTION.md
+```
+
+The intended reusable-package channel is the public npm registry, but public
+publication is still gated. The merchant package remains `private: true` until
+the project explicitly confirms package licensing plus npm `@pepepow` scope
+ownership/release credentials. CI now validates the actual packed artifact in
+a clean Node consumer so registry publication does not become the first time
+the install surface is exercised.
+
 ## Security boundary
 
 This repository may contain client-side wallet integration helpers, but server-facing packages must never require users to disclose mnemonic phrases or private keys.
@@ -120,7 +135,7 @@ Before substantial work, read the latest roadmap and relevant repo documentation
 
 ## Current status
 
-As of 2026-09-25:
+As of 2026-09-26:
 
 - repository initialized
 - Phase A protocol foundation is complete
@@ -135,3 +150,4 @@ As of 2026-09-25:
 - production validation on 2026-09-22 completed a new 0.1 PEPEW checkout through web-wallet handoff, broadcast, `paid_unconfirmed`, and `paid_confirmed`
 - Phase H3 reference merchant flow is complete in `pepepow-electrumx-service`
 - Phase H4 adds the server-side `@pepepow/pepewpay-merchant` helpers and durable-store composition examples
+- Phase I is in progress; I1 defines SDK distribution/versioning and validates the packed merchant artifact before public registry release
