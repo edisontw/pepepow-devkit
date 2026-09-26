@@ -42,6 +42,29 @@ if ( $verified['payment_version'] !== 3 || $verified['data']['status'] !== 'paid
 	exit( 1 );
 }
 
+
+$big_event_id = 'evt_' . str_repeat( 'c', 64 );
+$big_body     = str_replace(
+	'"amount_sats":1234000000',
+	'"amount_sats":999999999999999999999999',
+	str_replace(
+		$event_id,
+		$big_event_id,
+		$body
+	)
+);
+$big_signature = 'v1=' . hash_hmac( 'sha256', $timestamp . '.' . $big_event_id . '.' . $big_body, $secret );
+$big_headers   = array(
+	'X-PepewPay-Event-Id'  => $big_event_id,
+	'X-PepewPay-Timestamp' => (string) $timestamp,
+	'X-PepewPay-Signature' => $big_signature,
+);
+$big_verified = PEPEW_WC_Webhook_Verifier::verify( $big_headers, $big_body, $secret, $timestamp );
+if ( (string) $big_verified['data']['amount_sats'] !== '999999999999999999999999' ) {
+	fwrite( STDERR, "large amount webhook failed\n" );
+	exit( 1 );
+}
+
 expect_verification_failure(
 	static fn() => PEPEW_WC_Webhook_Verifier::verify( $headers, $body . ' ', $secret, $timestamp ),
 	'tampered body'
