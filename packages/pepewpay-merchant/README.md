@@ -46,6 +46,8 @@ tarball in a clean Node consumer.
 
 See `../../docs/SDK_DISTRIBUTION.md` for the versioning and release contract.
 
+For an end-to-end production-shaped integration path, see `../../docs/MERCHANT_QUICK_START.md`.
+
 ## Create payment
 
 Persist the merchant order and retry identity **before** the remote API call.
