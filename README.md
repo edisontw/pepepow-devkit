@@ -187,4 +187,5 @@ As of 2026-09-26:
 - Phase I I4 adds deterministic local contract testing plus an explicit bounded live-smoke path without a permanent sandbox service
 - Phase I I5.1 adds the first WooCommerce classic-checkout gateway skeleton with stable order identity, exact amount snapshotting, Payment API create/recovery, and PepewPay redirect
 - Phase I I5.2 adds exact-body signed webhook verification, durable event/version handling, and reorg-safe Woo order lifecycle policy
-- Phase I I5.3 adds WooCommerce Checkout Blocks and passes a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix in both legacy and HPOS storage modes; I5.4 packaging/production acceptance is next
+- Phase I I5.3 adds WooCommerce Checkout Blocks and passes a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix in both legacy and HPOS storage modes
+- Phase I I5.4 now has an allowlist installable ZIP, clean package install/upgrade/uninstall/dependency tests, and retry/recovery/webhook/reorg runtime acceptance; one externally reachable staging/live paid Woo E2E remains before production-ready status
