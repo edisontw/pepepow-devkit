@@ -133,6 +133,8 @@ final class PEPEW_WC_API_Client {
 			! isset( $payment['payment_id'] ) ||
 			! is_string( $payment['payment_id'] ) ||
 			1 !== preg_match( '/^pay_[A-Za-z0-9_-]{8,92}$/', $payment['payment_id'] ) ||
+			! isset( $payment['amount'] ) ||
+			! is_string( $payment['amount'] ) ||
 			! isset( $payment['merchant_reference'] ) ||
 			! is_string( $payment['merchant_reference'] ) ||
 			! isset( $payment['status'] ) ||
