@@ -3,3 +3,13 @@ dist/
 coverage/
 .DS_Store
 *.log
+
+# Merchant/developer local secrets and state
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+examples/merchant-app/data/
+webhook-registration.json
