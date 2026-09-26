@@ -1,6 +1,6 @@
 # PEPEW Payments for WooCommerce
 
-Status: **Phase I I5.1 development skeleton — not production-ready yet**
+Status: **Phase I I5.2 complete — runtime/HPOS acceptance still pending**
 
 This plugin is the first real platform adapter for PEPEW Payment Platform.
 
@@ -14,15 +14,20 @@ Current scope:
 - create-response loss recovery by exact `merchant_reference`
 - durable `payment_id`, payment version/status, and checkout URL stored through WooCommerce order CRUD
 - redirect to PepewPay using only the public `payment_id` capability
+- public WordPress REST webhook receiver at `/wp-json/pepew/v1/webhook`
+- exact raw-body HMAC-SHA256 verification with 5-minute replay window
+- bounded webhook body size and strict envelope/payment/reference validation
+- durable order `payment_version` / last-event state for duplicate and stale-event handling
+- short-lived per-event concurrency lock without adding an external queue
+- reorg-safe Woo order policy that does not assume payment status is monotonic
 
 The plugin never receives a mnemonic/private key and never signs a transaction.
 
-## Important limitations in I5.1
+## Important limitations after I5.2
 
 This increment is intentionally incomplete:
 
 - Checkout Block is **not supported yet** and is declared incompatible.
-- Webhook receipt/order-state updates are not implemented yet.
 - HPOS runtime compatibility is **not declared yet** until a real WooCommerce test matrix passes.
 - No fiat-to-PEPEW conversion exists. The order/store currency must be `PEPEW`.
 - Refunds, subscriptions, tokenization, and saved methods are not supported.
@@ -54,10 +59,43 @@ WooCommerce > Settings > Payments > PEPEW:
 - PepewPay checkout base URL
 - merchant API key
 - merchant PEPEW receiving address
+- webhook signing secret returned when registering the WordPress webhook URL with PEPEW Payment Platform
 - required confirmations
 - expiry seconds
 
-The API key stays server-side. The plugin never puts it into redirects, browser JavaScript, order notes, or logs.
+The API key and webhook signing secret stay server-side. The plugin never puts either secret into redirects, browser JavaScript, order notes, or logs.
+
+## Webhook lifecycle
+
+Register this HTTPS receiver with PEPEW Payment Platform:
+
+```text
+https://<shop-host>/wp-json/pepew/v1/webhook
+```
+
+Store the one-time endpoint signing secret in the WooCommerce PEPEW gateway setting.
+The receiver verifies the exact REST request body before parsing JSON, checks the event ID/timestamp/signature, enforces a replay window, validates the Woo merchant reference/site hash and exact amount, then applies only current/newer authoritative versions.
+
+Order-state policy:
+
+```text
+waiting / partial / paid_unconfirmed
+  -> pending/on-hold order: on-hold
+  -> processing order after reorg: on-hold + manual-review flag
+  -> completed/refunded/cancelled order: no automatic resurrection; manual review where money may have moved
+
+paid_confirmed / overpaid
+  -> normal unpaid/on-hold order: WooCommerce payment_complete()
+  -> already processing/completed: keep state, persist newer PEPEW version
+  -> cancelled/refunded: do not resurrect automatically; manual review
+
+expired / error
+  -> ordinary unpaid order: failed
+  -> cancelled: leave cancelled
+  -> already paid/completed/refunded: preserve business state and flag review
+```
+
+Retries with the same `event_id` are idempotent. Lower `payment_version` events cannot roll back newer merchant state. A higher-version reorg can move PEPEW state backward; the plugin reacts according to the safe policy above.
 
 ## HPOS design
 
@@ -83,12 +121,14 @@ From the DevKit repository:
 ```bash
 find integrations/woocommerce/pepew-payments -name '*.php' -print0 | xargs -0 -n1 php -l
 php integrations/woocommerce/tests/identity-test.php
+php integrations/woocommerce/tests/webhook-verifier-test.php
+php integrations/woocommerce/tests/order-state-test.php
 ```
 
 CI also rejects direct order-table/post-meta write APIs in the adapter.
 
 ## Next increments
 
-- **I5.2** — signed webhook receiver, durable event/version ordering, Woo order status transitions
-- **I5.3** — Checkout Block integration + real HPOS enabled/disabled test matrix, then compatibility declaration
+- **I5.2** — complete: signed webhook receiver, durable event/version ordering, and safe Woo order transitions
+- **I5.3** — Checkout Block integration + real WordPress/WooCommerce HPOS enabled/disabled test matrix, then compatibility declaration
 - **I5.4** — installable ZIP/package checks, merchant setup guide, production acceptance
