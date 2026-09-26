@@ -7,6 +7,7 @@
  * Requires PHP: 8.0
  * Requires Plugins: woocommerce
  * WC requires at least: 8.2
+ * WC tested up to: 11.1.2
  * Text Domain: pepew-payments
  * License: MIT
  */
@@ -27,11 +28,15 @@ add_action(
 	'before_woocommerce_init',
 	static function (): void {
 		if ( class_exists( '\\Automattic\\WooCommerce\\Utilities\\FeaturesUtil' ) ) {
-			// I5.1 intentionally supports classic checkout only.
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
 				'cart_checkout_blocks',
 				PEPEW_WC_PLUGIN_FILE,
-				false
+				true
+			);
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'custom_order_tables',
+				PEPEW_WC_PLUGIN_FILE,
+				true
 			);
 		}
 	}
