@@ -1,6 +1,6 @@
 # PEPEW Payments for WooCommerce
 
-Status: **Phase I I5.3 complete — distributable plugin/production acceptance next**
+Status: **Phase I I5.4 automated acceptance complete — staging/live paid E2E remains**
 
 This plugin is the first real platform adapter for PEPEW Payment Platform.
 
@@ -25,14 +25,14 @@ Current scope:
 
 The plugin never receives a mnemonic/private key and never signs a transaction.
 
-## Remaining limitations after I5.3
+## Remaining limitations after I5.4 automated acceptance
 
 This increment is intentionally incomplete:
 
 - No fiat-to-PEPEW conversion exists. The order/store currency must be `PEPEW`.
 - Refunds, subscriptions, tokenization, and saved methods are not supported.
 
-Do not publish this plugin to merchants as production-ready yet; I5.4 packaging, install/upgrade checks, and staging/live Woo checkout acceptance remain.
+Do not call this plugin production-ready yet. Packaging/install/upgrade/uninstall and deterministic runtime acceptance now pass, but one externally reachable staging/live paid Woo checkout remains the final gate.
 
 ## Architecture
 
@@ -114,6 +114,19 @@ I5.3 runtime acceptance passed on WordPress 7.1.2 / WooCommerce 11.1.2 with both
 
 I5.3 implements the current WooCommerce Blocks payment integration with server-side `AbstractPaymentMethodType` registration and client-side `registerPaymentMethod()`. Payment execution continues through the existing `WC_Payment_Gateway` business logic rather than duplicating payment authority.
 
+## Distribution artifact
+
+Successful `main` CI builds produce the `pepew-payments-woocommerce` artifact containing:
+
+```text
+pepew-payments.zip
+pepew-payments.zip.sha256
+```
+
+The ZIP is built from an allowlist and excludes `wp-env`, tests, scripts, `node_modules`, repository metadata, and local environment files.
+
+For installation, upgrade, webhook rotation, uninstall behavior, rollback, and the final staging/live acceptance checklist, see `docs/WOOCOMMERCE_DEPLOYMENT.md`.
+
 ## Development checks
 
 From the DevKit repository:
@@ -131,4 +144,4 @@ CI also rejects direct order-table/post-meta write APIs in the adapter.
 
 - **I5.2** — complete: signed webhook receiver, durable event/version ordering, and safe Woo order transitions
 - **I5.3** — complete: Checkout Block integration + WordPress 7.1.2 / WooCommerce 11.1.2 legacy+HPOS runtime matrix and compatibility declarations
-- **I5.4** — installable ZIP/package checks, merchant setup/upgrade/uninstall guide, and staging/live Woo production acceptance
+- **I5.4** — automated packaging/runtime acceptance complete; one staging/live paid Woo E2E remains before production-ready status
