@@ -59,6 +59,11 @@ if ( ! class_exists( '\Automattic\WooCommerce\Blocks\Payments\Integrations\Abstr
 	exit( 1 );
 }
 
+if ( false === has_action( 'woocommerce_blocks_payment_method_type_registration' ) ) {
+	fwrite( STDERR, "PEPEW Blocks payment-method registration hook is missing.\n" );
+	exit( 1 );
+}
+
 if ( ! class_exists( 'PEPEW_WC_Blocks' ) ) {
 	require_once PEPEW_WC_PLUGIN_DIR . 'includes/class-pepew-wc-blocks.php';
 }
