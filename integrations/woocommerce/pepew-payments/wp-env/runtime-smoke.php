@@ -42,14 +42,15 @@ update_option(
 	)
 );
 
-$gateways = WC()->payment_gateways()->payment_gateways();
-if ( ! isset( $gateways['pepew'] ) || ! $gateways['pepew'] instanceof PEPEW_WC_Gateway ) {
-	fwrite( STDERR, "PEPEW gateway is not registered.\n" );
+$registered_gateways = apply_filters( 'woocommerce_payment_gateways', array() );
+if ( ! in_array( 'PEPEW_WC_Gateway', $registered_gateways, true ) ) {
+	fwrite( STDERR, "PEPEW gateway is not registered with WooCommerce.\n" );
 	exit( 1 );
 }
 
-if ( ! $gateways['pepew']->is_available() ) {
-	fwrite( STDERR, "PEPEW gateway is not available in runtime smoke.\n" );
+$gateway = new PEPEW_WC_Gateway();
+if ( ! $gateway->is_available() ) {
+	fwrite( STDERR, "PEPEW gateway is not available with runtime settings.\n" );
 	exit( 1 );
 }
 
