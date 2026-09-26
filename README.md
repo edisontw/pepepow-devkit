@@ -113,6 +113,12 @@ Phase I distribution policy is documented in:
 docs/SDK_DISTRIBUTION.md
 ```
 
+Merchant production onboarding is documented in:
+
+```text
+docs/MERCHANT_QUICK_START.md
+```
+
 The runnable merchant application is:
 
 ```text
@@ -167,3 +173,4 @@ As of 2026-09-26:
 - Phase H4 adds the server-side `@pepepow/pepewpay-merchant` helpers and durable-store composition examples
 - Phase I I1 defines MIT/public-ready SDK distribution with npm scope ownership still external
 - Phase I I2 adds a runnable Node + SQLite merchant application with durable idempotency, create recovery, webhook deduplication, and reorg-safe payment_version handling
+- Phase I I3 adds a production merchant Quick Start, secure webhook registration helper, and Express/Fastify exact-raw-body integration patterns

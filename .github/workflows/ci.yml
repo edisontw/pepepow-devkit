@@ -103,6 +103,11 @@ jobs:
         run: npm run check
         working-directory: examples/merchant-app
 
+      - name: Check framework webhook patterns
+        run: |
+          node --check examples/webhooks/express.mjs
+          node --check examples/webhooks/fastify.mjs
+
   publish-pepewpay:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: devkit

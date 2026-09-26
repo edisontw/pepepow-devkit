@@ -50,6 +50,14 @@ PEPEW_MERCHANT_API_KEY
 PEPEW_WEBHOOK_SIGNING_SECRET
 ```
 
+Register the public HTTPS webhook endpoint once after `PEPEW_PUBLIC_WEBHOOK_URL` is set:
+
+```bash
+npm run webhook:register
+```
+
+The helper stores the one-time endpoint signing secret in `./data/webhook-registration.json` without printing it. Move the secret into server-side secret storage / `.env` as `PEPEW_WEBHOOK_SIGNING_SECRET`, then delete the registration file.
+
 Then run:
 
 ```bash
@@ -160,3 +168,7 @@ Before using this pattern in a real merchant application:
 - back up the merchant database according to the merchant's own recovery policy
 
 No Redis, PostgreSQL, Kafka, or queue is required for this reference flow.
+
+## Full production Quick Start
+
+See `../../docs/MERCHANT_QUICK_START.md` for credentials, registration, recovery, webhook framework patterns, fulfillment, logging/privacy, and version-compatibility guidance.
