@@ -121,8 +121,16 @@ final class PEPEW_WC_Webhook_Handler {
 			return new WP_REST_Response( null, 204 );
 		}
 
-		$payment_status = (string) $event['data']['status'];
-		$action         = PEPEW_WC_Order_State::action_for( $payment_status, $order->get_status() );
+		$payment_status       = (string) $event['data']['status'];
+		$policy_confirmed_sats = array_key_exists( 'policy_confirmed_sats', $event['data'] )
+			? (string) $event['data']['policy_confirmed_sats']
+			: null;
+		$action = PEPEW_WC_Order_State::action_for_event(
+			$payment_status,
+			$order->get_status(),
+			(string) $event['data']['amount_sats'],
+			$policy_confirmed_sats
+		);
 
 		$order->update_meta_data( PEPEW_WC_Meta::VERSION, $event_version );
 		$order->update_meta_data( PEPEW_WC_Meta::STATUS, $payment_status );
