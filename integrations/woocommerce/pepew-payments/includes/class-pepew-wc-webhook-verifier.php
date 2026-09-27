@@ -107,6 +107,20 @@ final class PEPEW_WC_Webhook_Verifier {
 			throw new PEPEW_WC_Webhook_Verification_Exception( 'invalid_amount' );
 		}
 
+		if ( 'overpaid' === $event['data']['status'] ) {
+			if ( ! array_key_exists( 'policy_confirmed_sats', $event['data'] ) ) {
+				throw new PEPEW_WC_Webhook_Verification_Exception( 'missing_policy_confirmed_sats' );
+			}
+
+			$policy_confirmed_sats = $event['data']['policy_confirmed_sats'];
+			if (
+				( ! is_int( $policy_confirmed_sats ) && ! is_string( $policy_confirmed_sats ) ) ||
+				1 !== preg_match( '/^(0|[1-9][0-9]*)$/', (string) $policy_confirmed_sats )
+			) {
+				throw new PEPEW_WC_Webhook_Verification_Exception( 'invalid_policy_confirmed_sats' );
+			}
+		}
+
 		return $event;
 	}
 
