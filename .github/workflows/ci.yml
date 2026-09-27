@@ -108,6 +108,14 @@ jobs:
           node --check examples/webhooks/express.mjs
           node --check examples/webhooks/fastify.mjs
 
+      - name: Install Telegram adapter contract tests
+        run: npm install --no-audit --no-fund
+        working-directory: integrations/telegram
+
+      - name: Test Telegram adapter contract
+        run: npm test
+        working-directory: integrations/telegram
+
   woocommerce-adapter:
     runs-on: ubuntu-latest
     timeout-minutes: 5
