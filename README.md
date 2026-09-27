@@ -23,6 +23,7 @@ examples/
 integrations/
   woocommerce/
     pepew-payments/
+  telegram/
 
 test-vectors/
   payment-uri-v1.json
@@ -189,3 +190,4 @@ As of 2026-09-26:
 - Phase I I5.2 adds exact-body signed webhook verification, durable event/version handling, and reorg-safe Woo order lifecycle policy
 - Phase I I5.3 adds WooCommerce Checkout Blocks and passes a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix in both legacy and HPOS storage modes
 - Phase I I5.4 now has an allowlist installable ZIP, clean package install/upgrade/uninstall/dependency tests, and retry/recovery/webhook/reorg runtime acceptance; one externally reachable staging/live paid Woo E2E remains before production-ready status
+- Phase I I5.5 has started the Telegram Bot adapter with deterministic stable identity/idempotency, PepewPay inline-button payloads, exact-reference recovery, reorg-safe payment-version handling, and confirmation-safe overpayment handling; external Telegram test-environment transport smoke remains
