@@ -74,6 +74,45 @@ final class PEPEW_WC_Order_State {
 		return self::ACTION_REVIEW;
 	}
 
+	public static function action_for_event(
+		string $payment_status,
+		string $order_status,
+		string $amount_sats,
+		?string $policy_confirmed_sats
+	): string {
+		if ( 'overpaid' === $payment_status ) {
+			if (
+				null === $policy_confirmed_sats ||
+				! self::atomic_string_gte( $policy_confirmed_sats, $amount_sats )
+			) {
+				return self::action_for( 'paid_unconfirmed', $order_status );
+			}
+		}
+
+		return self::action_for( $payment_status, $order_status );
+	}
+
+	public static function atomic_string_gte( string $left, string $right ): bool {
+		$left  = self::normalize_atomic_string( $left );
+		$right = self::normalize_atomic_string( $right );
+
+		if ( strlen( $left ) !== strlen( $right ) ) {
+			return strlen( $left ) > strlen( $right );
+		}
+
+		return 0 <= strcmp( $left, $right );
+	}
+
+	private static function normalize_atomic_string( string $value ): string {
+		$value = trim( $value );
+		if ( 1 !== preg_match( '/^(0|[1-9][0-9]*)$/', $value ) ) {
+			throw new InvalidArgumentException( 'Invalid atomic PEPEW amount.' );
+		}
+
+		$value = ltrim( $value, '0' );
+		return '' === $value ? '0' : $value;
+	}
+
 	public static function decimal_to_atoms_string( string $amount ): string {
 		$amount = trim( $amount );
 		if ( 1 !== preg_match( '/^(0|[1-9][0-9]*)(?:\.([0-9]{1,8}))?$/', $amount, $matches ) ) {
