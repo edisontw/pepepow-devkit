@@ -34,7 +34,7 @@ function pepew_i54_order( string $price ): WC_Order {
 	return $order;
 }
 
-function pepew_i54_event( WC_Order $order, string $event_id, int $version, string $status, string $secret ): WP_REST_Response {
+function pepew_i54_event( WC_Order $order, string $event_id, int $version, string $status, string $secret, ?string $policy_confirmed_sats = null ): WP_REST_Response {
 	$reference = (string) $order->get_meta( PEPEW_WC_Meta::REFERENCE, true );
 	$payment_id = (string) $order->get_meta( PEPEW_WC_Meta::PAYMENT_ID, true );
 	$amount = (string) $order->get_meta( PEPEW_WC_Meta::AMOUNT, true );
@@ -51,6 +51,9 @@ function pepew_i54_event( WC_Order $order, string $event_id, int $version, strin
 			'status'             => $status,
 			'merchant_reference' => $reference,
 			'amount_sats'        => (int) PEPEW_WC_Order_State::decimal_to_atoms_string( $amount ),
+			'policy_confirmed_sats' => null === $policy_confirmed_sats
+				? ( 'paid_confirmed' === $status ? PEPEW_WC_Order_State::decimal_to_atoms_string( $amount ) : '0' )
+				: $policy_confirmed_sats,
 		),
 	);
 
@@ -170,6 +173,62 @@ if ( 4 !== (int) $order->get_meta( PEPEW_WC_Meta::VERSION, true ) ) {
 	pepew_i54_fail( 'Duplicate webhook changed payment version state.' );
 }
 
+// Overpayment must still obey the configured confirmation policy. An unconfirmed
+// overpayment remains on hold; only policy-confirmed value may complete the order.
+$overpaid_order = pepew_i54_order( '0.10' );
+$overpaid_filter = static function ( $preempt, array $args, string $url ) {
+	if ( 'POST' !== ( $args['method'] ?? 'GET' ) || ! str_ends_with( wp_parse_url( $url, PHP_URL_PATH ) ?: '', '/api/v1/payments' ) ) {
+		return $preempt;
+	}
+
+	$body = json_decode( (string) ( $args['body'] ?? '' ), true );
+	return pepew_i54_response(
+		array(
+			'ok'                 => true,
+			'payment_id'         => 'pay_i54overpaid01',
+			'merchant_reference' => $body['merchant_reference'],
+			'amount'             => '0.1',
+			'status'             => 'waiting',
+			'version'            => 1,
+		),
+		201
+	);
+};
+add_filter( 'pre_http_request', $overpaid_filter, 10, 3 );
+$overpaid_result = $gateway->process_payment( $overpaid_order->get_id() );
+remove_filter( 'pre_http_request', $overpaid_filter, 10 );
+
+if ( 'success' !== ( $overpaid_result['result'] ?? '' ) ) {
+	pepew_i54_fail( 'Overpayment fixture payment could not be created.' );
+}
+
+$overpaid_order = wc_get_order( $overpaid_order->get_id() );
+pepew_i54_event(
+	$overpaid_order,
+	'evt_' . str_repeat( '5', 64 ),
+	2,
+	'overpaid',
+	$webhook_secret,
+	'0'
+);
+$overpaid_order = wc_get_order( $overpaid_order->get_id() );
+if ( 'on-hold' !== $overpaid_order->get_status() ) {
+	pepew_i54_fail( 'Unconfirmed overpayment bypassed the confirmation policy.' );
+}
+
+pepew_i54_event(
+	$overpaid_order,
+	'evt_' . str_repeat( '6', 64 ),
+	3,
+	'overpaid',
+	$webhook_secret,
+	PEPEW_WC_Order_State::decimal_to_atoms_string( '0.10' )
+);
+$overpaid_order = wc_get_order( $overpaid_order->get_id() );
+if ( ! $overpaid_order->has_status( array( 'processing', 'completed' ) ) ) {
+	pepew_i54_fail( 'Confirmed overpayment did not complete WooCommerce payment handling.' );
+}
+
 // Uncertain create recovery: a transport failure followed by exact-reference
 // lookup must bind the recovered payment rather than create a second identity.
 $recovery_order = pepew_i54_order( '1.25' );
@@ -222,6 +281,7 @@ if (
 }
 
 $order->delete( true );
+$overpaid_order->delete( true );
 $recovery_order->delete( true );
 
 echo "PEPEW WooCommerce I5.4 merchant lifecycle smoke passed.\n";
