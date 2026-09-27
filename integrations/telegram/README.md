@@ -72,6 +72,57 @@ npm install
 npm test
 ```
 
+## Telegram Test Environment transport smoke
+
+The first external increment is an operator-only transport smoke. It uses only a
+dedicated Telegram **test-environment** bot token and never calls the Payment
+Platform.
+
+Implementation:
+
+```text
+src/transport.mjs
+scripts/transport-smoke.mjs
+tests/transport.test.mjs
+```
+
+The smoke is intentionally bounded:
+
+1. authenticate the dedicated test bot with `getMe`
+2. advance past the latest queued update, then wait for one fresh private-chat
+   message
+3. reply once with a merchant payment-style test message and an HTTPS
+   `Pay with PEPEW` inline button pointing at `https://pay.pepepow.net/`
+4. exit
+
+It does **not** create a Payment API intent, register/delete a Telegram webhook,
+process a PEPEW webhook, send funds, or touch wallet signing.
+
+The script calls only Telegram Test Bot API methods `getMe`, `getUpdates`,
+and `sendMessage`. It refuses group/supergroup updates and does not print raw
+Telegram chat/user identifiers. The bot token is accepted from
+`TELEGRAM_BOT_TOKEN` only; there is no token command-line argument.
+
+Create the bot inside Telegram's dedicated test environment, start the script,
+wait until it says it is waiting for a fresh private message, then send one
+message to that test bot.
+
+To enter the token without echoing it or placing the token value in shell
+history:
+
+```bash
+cd integrations/telegram
+npm install
+read -rsp "Telegram test bot token: " TELEGRAM_BOT_TOKEN; echo
+export TELEGRAM_BOT_TOKEN
+npm run smoke:transport
+unset TELEGRAM_BOT_TOKEN
+```
+
+Do not paste the token into chat, an issue, CI variables for normal contract
+tests, or a repository file. Use a clean dedicated test bot; the smoke does not
+automatically remove an existing Telegram webhook.
+
 ## Live test sequence
 
 After the deterministic contract tests pass, use Telegram's dedicated Bot API
