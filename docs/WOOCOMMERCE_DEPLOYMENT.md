@@ -122,8 +122,10 @@ Platform:
 - [ ] before paying, retry/back-forward once and confirm the same Woo order reuses the same payment capability
 - [ ] open PepewPay and hand off to a non-custodial wallet
 - [ ] wallet signs locally; WordPress/Payment Platform never receives mnemonic/private key
+- [ ] use a payer address that differs from the merchant receiving address; the current PEPEW Light web wallet returns change to the sender address, so self-payment to the same merchant address can produce both a payment output and a change output to the invoice address and is not a representative acceptance test
 - [ ] broadcast one small real transaction
 - [ ] observe authoritative payment state reach `paid_unconfirmed`
+- [ ] if an overpayment occurs, verify Woo remains on-hold until `policy_confirmed_sats` reaches the requested amount; unconfirmed overpayment must not bypass the configured confirmation policy
 - [ ] observe a signed webhook move the Woo order to on-hold
 - [ ] after required confirmations, observe `paid_confirmed`
 - [ ] observe WooCommerce `payment_complete()` transition the order to processing/completed as appropriate
