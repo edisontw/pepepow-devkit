@@ -21,6 +21,10 @@ expect_same_state( 'review', PEPEW_WC_Order_State::action_for( 'paid_confirmed',
 expect_same_state( 'review', PEPEW_WC_Order_State::action_for( 'paid_unconfirmed', 'refunded' ), 'refunded unconfirmed review' );
 expect_same_state( 'none', PEPEW_WC_Order_State::action_for( 'waiting', 'cancelled' ), 'cancelled waiting unchanged' );
 expect_same_state( 'none', PEPEW_WC_Order_State::action_for( 'expired', 'cancelled' ), 'cancelled expired unchanged' );
+expect_same_state( 'hold', PEPEW_WC_Order_State::action_for_event( 'overpaid', 'pending', '10000000', '0' ), 'unconfirmed overpayment pending' );
+expect_same_state( 'complete', PEPEW_WC_Order_State::action_for_event( 'overpaid', 'on-hold', '10000000', '10000000' ), 'confirmed overpayment' );
+expect_same_state( true, PEPEW_WC_Order_State::atomic_string_gte( '100000000000000000000', '99999999999999999999' ), 'large atomic compare' );
+expect_same_state( false, PEPEW_WC_Order_State::atomic_string_gte( '999', '1000' ), 'atomic compare below' );
 
 expect_same_state( '1234000000', PEPEW_WC_Order_State::decimal_to_atoms_string( '12.34' ), 'amount atoms' );
 expect_same_state( '1', PEPEW_WC_Order_State::decimal_to_atoms_string( '0.00000001' ), 'one atom' );
