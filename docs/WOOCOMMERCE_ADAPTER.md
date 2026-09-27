@@ -158,6 +158,7 @@ I5.4 automated verification:
 - CI artifact name: `pepew-payments-woocommerce`
 - the runtime merchant lifecycle test covers retry/recovery/webhook/reorg without production credentials
 - production/staging paid E2E remains intentionally separate because it requires an externally reachable Woo site, merchant credentials, registered webhook endpoint, and one real wallet-signed transaction
+- 2026-09-27 staging exposed a decimal-rendering interoperability bug (`0.10000000` Woo snapshot vs `0.1` Payment API response); the gateway now compares exact 8-decimal atom values instead of decimal string formatting, with create/recovery runtime regression coverage
 - see `docs/WOOCOMMERCE_DEPLOYMENT.md` for the exact staging/live acceptance checklist
 ## Security boundary
 
