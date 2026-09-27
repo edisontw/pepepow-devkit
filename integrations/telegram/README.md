@@ -1,8 +1,28 @@
-# PEPEW Telegram Bot Integration
+# PEPEW Telegram Merchant Payment Adapter
 
 Status: **I5.5 contract adapter baseline**
 
-This directory tests the next Phase I platform adapter after WooCommerce.
+This directory tests the next Phase I merchant/payment adapter after WooCommerce.
+
+This is **not another PEPEW wallet bot** and it does not replace the existing
+Telegram wallet/Mini App in `edisontw/pepepow-wallet-suite`.
+
+The domain split is intentional:
+
+- `pepepow-wallet-suite` Telegram Bot / Mini App is payer-side wallet UX:
+  balance, receive, send, wallet handoff, and client-side signing. Mnemonic and
+  private keys remain on the user's device.
+- this adapter is merchant-side payment acceptance: create a Payment Platform
+  invoice, return a PepewPay checkout link in Telegram, consume authoritative
+  signed payment events, and update merchant/chat payment state.
+- the adapter contains no mnemonic, private-key, derivation, UTXO-selection, or
+  transaction-signing logic.
+- PepewPay may hand a payer into the existing PEPEW wallet/Mini App, so the two
+  systems are complementary rather than competing implementations.
+
+A production merchant may embed this adapter pattern in its own Telegram bot.
+The project does not require a second public PEPEW wallet bot. A separate test
+bot/token may still be used for Telegram transport acceptance.
 
 The first increment is deliberately network-free. It proves the Telegram-shaped
 merchant contract before any bot token or production merchant secret is used.
@@ -55,7 +75,7 @@ npm test
 ## Live test sequence
 
 After the deterministic contract tests pass, use Telegram's dedicated Bot API
-test environment before the normal production bot environment.
+test environment before attaching the adapter to any production merchant bot.
 
 The live test should be staged in two increments:
 
