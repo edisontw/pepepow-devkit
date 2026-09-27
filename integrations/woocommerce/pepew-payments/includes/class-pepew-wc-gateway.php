@@ -199,7 +199,10 @@ final class PEPEW_WC_Gateway extends WC_Payment_Gateway {
 			throw new RuntimeException( 'Recovered payment does not belong to this WooCommerce order.' );
 		}
 
-		if ( (string) $payment['amount'] !== $stored_amount ) {
+		if (
+			PEPEW_WC_Order_State::decimal_to_atoms_string( (string) $payment['amount'] ) !==
+			PEPEW_WC_Order_State::decimal_to_atoms_string( $stored_amount )
+		) {
 			throw new RuntimeException( 'PEPEW payment amount does not match the WooCommerce order snapshot.' );
 		}
 
