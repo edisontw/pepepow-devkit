@@ -160,6 +160,9 @@ I5.4 automated verification:
 - production/staging paid E2E remains intentionally separate because it requires an externally reachable Woo site, merchant credentials, registered webhook endpoint, and one real wallet-signed transaction
 - 2026-09-27 staging exposed a decimal-rendering interoperability bug (`0.10000000` Woo snapshot vs `0.1` Payment API response); the gateway now compares exact 8-decimal atom values instead of decimal string formatting, with create/recovery runtime regression coverage
 - see `docs/WOOCOMMERCE_DEPLOYMENT.md` for the exact staging/live acceptance checklist
+- 2026-09-27 manual Windows/Local staging reached a public Cloudflare HTTPS WordPress site, loaded the exact CI ZIP, verified Payment API Bearer access, registered/configured the signed webhook receiver, and reached the PepewPay -> PEPEW Light web-wallet handoff
+- that staging run exposed and fixed decimal-rendering interoperability (`0.10000000` vs `0.1`) and an overpayment confirmation-policy edge case; both now have regression coverage
+- the final real paid Woo webhook/confirmation closeout was intentionally not claimed complete; testing paused before a representative payment from a payer address different from the merchant receiving address
 ## Security boundary
 
 - merchant API key: WordPress server only
