@@ -358,8 +358,8 @@ export default function App() {
               </div>
 
               <div className="handoff-note">
-                The native button uses the <code>pepew:</code> URI. The web-wallet fallback opens
-                PEPEW Light with only the recipient address and amount. Signing stays in the wallet.
+                The native button uses the <code>pepew:</code> URI. The preferred web-wallet handoff opens
+                the integrated PEPEW Wallet with only the recipient address and amount. Signing stays in the wallet.
               </div>
             </>
           ) : (

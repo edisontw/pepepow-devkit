@@ -21,14 +21,23 @@ describe("PepewPay handoff", () => {
     );
   });
 
-  it("builds the existing web wallet send fallback without secrets", () => {
+  it("builds the integrated web wallet handoff without secrets", () => {
     expect(buildWebWalletHandoffUrl({
       address: ADDRESS,
       amount: "1.25",
       label: "Ignored by wallet fallback",
       message: "Ignored by wallet fallback",
     })).toBe(
-      "https://light.pepepow.net/wallet/send?to=PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb&amount=1.25",
+      "https://wallet.pepepow.net/send?to=PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb&amount=1.25",
+    );
+  });
+
+  it("keeps the standalone Light Wallet available as an override", () => {
+    expect(buildWebWalletHandoffUrl(
+      { address: ADDRESS, amount: "0.1" },
+      "https://light.pepepow.net/wallet/send",
+    )).toBe(
+      "https://light.pepepow.net/wallet/send?to=PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb&amount=0.1",
     );
   });
 

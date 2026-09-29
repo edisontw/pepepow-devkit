@@ -1,6 +1,6 @@
 import { formatPaymentUri, type PaymentUriInput } from "@pepepow/pepew-js";
 
-export const DEFAULT_WEB_WALLET_URL = "https://light.pepepow.net/wallet/send";
+export const DEFAULT_WEB_WALLET_URL = "https://wallet.pepepow.net/send";
 
 export function buildPaymentUri(input: PaymentUriInput): string {
   return formatPaymentUri(input);

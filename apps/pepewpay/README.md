@@ -8,7 +8,7 @@ Current Phase C scope:
 - validate address and amount locally through `@pepepow/pepew-js`
 - render a QR code containing the canonical `pepew:` URI
 - open a registered wallet application through the native URI
-- fall back to the existing PEPEW Light web-wallet send route
+- hand off to the integrated PEPEW Wallet send route
 - copy/share public payment intent
 - build as static files
 - provide a minimal manifest/service-worker PWA shell
@@ -53,11 +53,19 @@ Native:
 pepew:<address>?amount=<amount>&label=<label>&message=<message>
 ```
 
-Current web-wallet fallback:
+Preferred web-wallet handoff:
 
 ```text
-https://light.pepepow.net/wallet/send?to=<address>&amount=<amount>
+https://wallet.pepepow.net/send?to=<address>&amount=<amount>
 ```
+
+The standalone PEPEW Light Wallet remains available independently at:
+
+```text
+https://light.pepepow.net/wallet/
+```
+
+It is not being retired or redirected. For controlled deployments, the handoff target can still be overridden to its send route if desired.
 
 Override the fallback build-time URL with:
 
@@ -65,7 +73,7 @@ Override the fallback build-time URL with:
 VITE_PEPEW_WEB_WALLET_URL
 ```
 
-Only public address/amount data is handed to the existing web wallet. Signing remains inside the wallet client.
+Only public address/amount data is handed to the wallet client. Signing remains inside the wallet client. No mnemonic, private key, merchant API key, or payment webhook secret is included in the handoff URL.
 
 ## Persisted checkout status
 
