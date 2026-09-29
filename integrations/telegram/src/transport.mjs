@@ -1,7 +1,7 @@
 const TELEGRAM_TEST_API_ORIGIN = "https://api.telegram.org";
 const BOT_TOKEN_RE = /^\d+:[A-Za-z0-9_-]{20,}$/;
 const CHAT_ID_RE = /^-?(?:0|[1-9][0-9]{0,23})$/;
-const ALLOWED_METHODS = new Set(["getMe", "getUpdates", "sendMessage"]);
+const ALLOWED_METHODS = new Set(["getMe", "getUpdates", "sendMessage", "editMessageText"]);
 
 export class TelegramTransportSmokeError extends Error {
   constructor(code, message = code) {

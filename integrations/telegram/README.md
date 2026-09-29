@@ -1,6 +1,6 @@
 # PEPEW Telegram Merchant Payment Adapter
 
-Status: **I5.5 contract adapter baseline**
+Status: **I5.5 transport smoke accepted; payment/webhook E2E harness ready**
 
 This directory tests the next Phase I merchant/payment adapter after WooCommerce.
 
@@ -98,8 +98,8 @@ The smoke is intentionally bounded:
 It does **not** create a Payment API intent, register/delete a Telegram webhook,
 process a PEPEW webhook, send funds, or touch wallet signing.
 
-The script calls only Telegram Test Bot API methods `getMe`, `getUpdates`,
-and `sendMessage`. It refuses group/supergroup updates and does not print raw
+The transport-smoke script calls only Telegram Test Bot API methods `getMe`, `getUpdates`,
+and `sendMessage`. The later payment E2E harness additionally uses `editMessageText` only after a verified Payment Platform webhook. It refuses group/supergroup updates and does not print raw
 Telegram chat/user identifiers. The bot token is accepted from
 `TELEGRAM_BOT_TOKEN` only; there is no token command-line argument.
 
@@ -137,6 +137,73 @@ The live test should be staged in two increments:
    different PEPEW address than the merchant receiving address, process signed
    Payment Platform webhooks, and update the Telegram message only after the
    configured confirmation policy is satisfied.
+
+## Operator payment/webhook E2E
+
+The bounded operator harness is:
+
+```text
+scripts/payment-e2e.mjs
+src/e2e.mjs
+```
+
+It starts a localhost webhook receiver, registers one temporary HTTPS webhook
+endpoint with the Payment Platform, waits for one fresh private message in the
+Telegram Test Environment, creates one real PEPEW payment, sends the PepewPay
+button, verifies exact-body webhook signatures, applies only increasing
+`payment_version`, and updates that Telegram message with `editMessageText`.
+
+The temporary webhook endpoint subscribes only to:
+
+```text
+payment.partial
+payment.paid_unconfirmed
+payment.paid_confirmed
+payment.overpaid
+payment.expired
+```
+
+The endpoint is disabled when the test reaches a terminal state, times out, or
+the harness exits through its normal cleanup path. The one-time signing secret
+is kept in process memory only and is never written to the repository.
+
+A public HTTPS tunnel or equivalent is still required to route the configured
+webhook URL to the local listener (default `127.0.0.1:8788`). Keep the tunnel
+tool in a separate terminal. For example, after creating an HTTPS tunnel to that
+local port, set the full public callback URL ending in `/webhooks/pepew`.
+
+Enter secrets without putting their values in shell history:
+
+```bash
+cd integrations/telegram
+npm install
+npm test
+
+read -rsp "Telegram test bot token: " TELEGRAM_BOT_TOKEN; echo
+export TELEGRAM_BOT_TOKEN
+read -rsp "PEPEW merchant API key: " PEPEW_MERCHANT_API_KEY; echo
+export PEPEW_MERCHANT_API_KEY
+
+export PEPEW_RECEIVE_ADDRESS="<merchant receiving address>"
+export PEPEW_PUBLIC_WEBHOOK_URL="https://<public-tunnel-host>/webhooks/pepew"
+export PEPEW_E2E_AMOUNT="0.1"
+export PEPEW_CONFIRMATIONS="1"
+
+npm run smoke:payment-e2e
+
+unset TELEGRAM_BOT_TOKEN PEPEW_MERCHANT_API_KEY
+unset PEPEW_RECEIVE_ADDRESS PEPEW_PUBLIC_WEBHOOK_URL
+unset PEPEW_E2E_AMOUNT PEPEW_CONFIRMATIONS
+```
+
+When the harness says it is waiting for a fresh private message, send one message
+to the dedicated test bot. It will create exactly one payment and return a real
+PepewPay button. Complete that payment from a PEPEW payer address that is
+different from `PEPEW_RECEIVE_ADDRESS`. Wallet mnemonic/private key and signing
+remain entirely client-side.
+
+Do not paste the Telegram token, merchant API key, temporary webhook signing
+secret, mnemonic, or private key into chat or GitHub.
 
 Telegram Bot API reference:
 

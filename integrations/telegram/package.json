@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "smoke:transport": "node scripts/transport-smoke.mjs"
+    "smoke:transport": "node scripts/transport-smoke.mjs",
+    "smoke:payment-e2e": "node scripts/payment-e2e.mjs"
   },
   "engines": {
     "node": ">=20"
