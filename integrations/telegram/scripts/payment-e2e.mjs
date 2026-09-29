@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import {
   MerchantClient,
   WebhookVerificationError,
+  verifyWebhook,
 } from "@pepepow/pepewpay-merchant";
 import { createTelegramCheckout } from "../src/index.mjs";
 import {
@@ -158,8 +159,13 @@ const server = createServer(async (req, res) => {
 
     const rawBody = await readRawBody(req);
     if (!state.paymentId) {
-      // Endpoint exists before the invoice does. Valid signed events for unrelated
-      // payments are irrelevant to this bounded operator harness.
+      // Endpoint exists before the invoice does. Authenticate any delivery before
+      // ignoring it so even the pre-invoice window preserves the webhook boundary.
+      verifyWebhook({
+        headers: normalizedHeaders(req.headers),
+        rawBody,
+        signingSecret: state.signingSecret,
+      });
       res.writeHead(204, { "Cache-Control": "no-store" });
       res.end();
       return;
@@ -267,7 +273,12 @@ try {
     );
     timer.unref?.();
   });
-  const terminal = await Promise.race([terminalPromise, timeout]);
+  const interrupted = new Promise((_, reject) => {
+    const stop = () => reject(new Error("Telegram payment E2E interrupted by operator."));
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  });
+  const terminal = await Promise.race([terminalPromise, timeout, interrupted]);
   console.log(`Telegram payment E2E terminal state: ${terminal.state}`);
 } finally {
   if (state.endpointId) {
