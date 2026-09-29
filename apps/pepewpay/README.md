@@ -121,10 +121,10 @@ git clone --depth 1 --branch pepewpay-dist \
   https://github.com/edisontw/pepepow-devkit.git
 ```
 
-The intended first production path is:
+Current production checkout is:
 
 ```text
-https://light.pepepow.net/pay/
+https://pay.pepepow.net/
 ```
 
-with static files served by Nginx from `/var/www/pay`.
+The CI-built static artifact is deployed on the dedicated Payment Platform host. The historical `https://light.pepepow.net/pay/` compatibility path may remain available, but new merchant checkout links should use `pay.pepepow.net`.
