@@ -113,3 +113,85 @@ an interaction token.
 
 Only after transport smoke passes should the adapter add the real Payment
 Platform/webhook E2E path.
+
+
+## Operator transport smoke
+
+The transport smoke intentionally creates **no Payment Platform invoice**. It
+requires a dedicated Discord application/bot installed in a test server with
+permission to send messages in the test channel.
+
+Required values:
+
+```text
+DISCORD_PUBLIC_KEY        # public, from Developer Portal General Information
+DISCORD_APPLICATION_ID    # public
+DISCORD_GUILD_ID          # public test-server ID
+DISCORD_BOT_TOKEN         # secret; server-side only
+```
+
+The smoke listener defaults to:
+
+```text
+127.0.0.1:8789/pepew-discord-e2e/interactions
+```
+
+Expose only that path through a temporary HTTPS reverse proxy. Do not expose
+port 8789 directly.
+
+Start the listener first:
+
+```bash
+cd integrations/discord
+
+read -rsp "Discord bot token: " DISCORD_BOT_TOKEN; echo
+export DISCORD_BOT_TOKEN
+export DISCORD_PUBLIC_KEY="<application public key>"
+
+npm run smoke:transport
+```
+
+While it is running, configure the public HTTPS URL as the application's
+Interactions Endpoint URL in Discord Developer Portal. Discord should send a
+signed PING; the terminal should report:
+
+```text
+Verified Discord PING acknowledged.
+```
+
+In a separate shell, register/update the guild-scoped test command:
+
+```bash
+cd integrations/discord
+
+read -rsp "Discord bot token: " DISCORD_BOT_TOKEN; echo
+export DISCORD_BOT_TOKEN
+export DISCORD_APPLICATION_ID="<application id>"
+export DISCORD_GUILD_ID="<test server id>"
+
+npm run setup:test-command
+```
+
+Then run in the selected test channel:
+
+```text
+/pepew-pay amount:0.1
+```
+
+Successful smoke behavior:
+
+- Discord verifies the signed interaction and receives an immediate private
+  test-only acknowledgement;
+- the bot posts one ordinary channel message;
+- the channel message contains a HTTPS PepewPay link button;
+- no merchant API key, Payment Platform webhook, invoice, PEPEW funds, wallet
+  key, or signing operation is used.
+
+After the smoke, clear the bot token from each shell:
+
+```bash
+unset DISCORD_BOT_TOKEN
+```
+
+Do not paste the bot token into chat, GitHub, command-line arguments, or logs.
+If it is disclosed, reset it in the Discord Developer Portal before continuing.
