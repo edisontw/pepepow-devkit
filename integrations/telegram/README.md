@@ -21,8 +21,9 @@ The domain split is intentional:
   systems are complementary rather than competing implementations.
 
 A production merchant may embed this adapter pattern in its own Telegram bot.
-The project does not require a second public PEPEW wallet bot. A separate test
-bot/token may still be used for Telegram transport acceptance.
+The project does not require replacing the existing PEPEW wallet bot. The
+transport layer supports both Telegram's dedicated test environment and a
+separate normal production-environment merchant/payment bot.
 
 The first increment is deliberately network-free. It proves the Telegram-shaped
 merchant contract before any bot token or production merchant secret is used.
@@ -214,3 +215,52 @@ https://core.telegram.org/bots/features#the-test-environment
 
 For the PEPEW merchant contract, see `docs/MERCHANT_QUICK_START.md` and
 `docs/TESTING_AND_SANDBOX.md`.
+
+
+## Normal Telegram production-environment bot
+
+A newly created merchant/payment bot may be tested directly without replacing or
+reconfiguring the existing PEPEW Wallet Bot. Use a dedicated bot that has no
+Telegram webhook configured while this bounded operator harness uses
+`getUpdates`.
+
+Set:
+
+```bash
+export TELEGRAM_API_ENV=production
+```
+
+Production mode calls the normal Bot API path:
+
+```text
+https://api.telegram.org/bot<TOKEN>/METHOD
+```
+
+Test mode remains available and uses:
+
+```text
+https://api.telegram.org/bot<TOKEN>/test/METHOD
+```
+
+For a normal BotFather-created merchant/payment bot:
+
+```bash
+cd integrations/telegram
+npm install
+npm test
+
+export TELEGRAM_API_ENV=production
+read -rsp "Telegram bot token: " TELEGRAM_BOT_TOKEN; echo
+export TELEGRAM_BOT_TOKEN
+
+npm run smoke:transport
+
+unset TELEGRAM_BOT_TOKEN TELEGRAM_API_ENV
+```
+
+Do not borrow the existing Wallet Bot for this harness because its Telegram
+webhook belongs to the Wallet API control plane. The dedicated payment bot keeps
+the two roles isolated.
+
+If a complete bot token is ever disclosed outside trusted secret storage, revoke
+it in BotFather and replace it before continuing.

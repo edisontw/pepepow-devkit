@@ -1,7 +1,8 @@
-const TELEGRAM_TEST_API_ORIGIN = "https://api.telegram.org";
+const TELEGRAM_API_ORIGIN = "https://api.telegram.org";
 const BOT_TOKEN_RE = /^\d+:[A-Za-z0-9_-]{20,}$/;
 const CHAT_ID_RE = /^-?(?:0|[1-9][0-9]{0,23})$/;
 const ALLOWED_METHODS = new Set(["getMe", "getUpdates", "sendMessage", "editMessageText"]);
+const API_ENVIRONMENTS = new Set(["test", "production"]);
 
 export class TelegramTransportSmokeError extends Error {
   constructor(code, message = code) {
@@ -20,6 +21,17 @@ function normalizeBotToken(value) {
     );
   }
   return token;
+}
+
+export function normalizeTelegramApiEnvironment(value = "test") {
+  const environment = String(value ?? "test").trim().toLowerCase();
+  if (!API_ENVIRONMENTS.has(environment)) {
+    throw new TelegramTransportSmokeError(
+      "telegram_api_environment_invalid",
+      "TELEGRAM_API_ENV must be either test or production.",
+    );
+  }
+  return environment;
 }
 
 function normalizeChatId(value) {
@@ -60,42 +72,36 @@ export function buildTelegramTransportSmokeMessage({
     ].join("\n"),
     link_preview_options: { is_disabled: true },
     reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "Pay with PEPEW",
-            url: url.toString(),
-          },
-        ],
-      ],
+      inline_keyboard: [[{ text: "Pay with PEPEW", url: url.toString() }]],
     },
   };
 }
 
-export async function telegramTestApiCall({
+export async function telegramApiCall({
   token,
   method,
   body = {},
+  apiEnvironment = "test",
   fetchImpl = globalThis.fetch,
   requestTimeoutMs = 65000,
 }) {
   const normalizedToken = normalizeBotToken(token);
+  const environment = normalizeTelegramApiEnvironment(apiEnvironment);
   if (!ALLOWED_METHODS.has(method)) {
     throw new TelegramTransportSmokeError(
       "telegram_smoke_method_not_allowed",
       "Telegram transport smoke attempted an unsupported Bot API method.",
     );
   }
-  if (typeof fetchImpl !== "function") {
-    throw new TypeError("fetch_impl_invalid");
-  }
+  if (typeof fetchImpl !== "function") throw new TypeError("fetch_impl_invalid");
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
+  const environmentSegment = environment === "test" ? "/test" : "";
   let response;
   try {
     response = await fetchImpl(
-      `${TELEGRAM_TEST_API_ORIGIN}/bot${normalizedToken}/test/${method}`,
+      `${TELEGRAM_API_ORIGIN}/bot${normalizedToken}${environmentSegment}/${method}`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -106,7 +112,7 @@ export async function telegramTestApiCall({
   } catch {
     throw new TelegramTransportSmokeError(
       `telegram_${method}_transport_failed`,
-      `Telegram Test Bot API ${method} transport failed.`,
+      `Telegram Bot API ${method} transport failed.`,
     );
   } finally {
     clearTimeout(timer);
@@ -118,7 +124,7 @@ export async function telegramTestApiCall({
   } catch {
     throw new TelegramTransportSmokeError(
       `telegram_${method}_response_invalid`,
-      `Telegram Test Bot API ${method} returned invalid JSON.`,
+      `Telegram Bot API ${method} returned invalid JSON.`,
     );
   }
 
@@ -128,8 +134,11 @@ export async function telegramTestApiCall({
       safeTelegramDescription(payload?.description),
     );
   }
-
   return payload.result;
+}
+
+export async function telegramTestApiCall(input) {
+  return telegramApiCall({ ...input, apiEnvironment: "test" });
 }
 
 function nextOffsetFromBacklog(result) {
@@ -156,15 +165,17 @@ function privateChatIdFromUpdate(update) {
 
 export async function runTelegramTransportSmoke({
   token,
-  apiCall = telegramTestApiCall,
+  apiEnvironment = "test",
+  apiCall = telegramApiCall,
   onStatus = () => {},
   checkoutUrl = "https://pay.pepepow.net/",
 }) {
   if (typeof apiCall !== "function") throw new TypeError("api_call_invalid");
   if (typeof onStatus !== "function") throw new TypeError("on_status_invalid");
+  const environment = normalizeTelegramApiEnvironment(apiEnvironment);
 
-  await apiCall({ token, method: "getMe", body: {} });
-  onStatus("telegram_test_bot_authenticated");
+  await apiCall({ token, method: "getMe", body: {}, apiEnvironment: environment });
+  onStatus("telegram_bot_authenticated");
 
   const backlog = await apiCall({
     token,
@@ -175,6 +186,7 @@ export async function runTelegramTransportSmoke({
       timeout: 0,
       allowed_updates: ["message"],
     },
+    apiEnvironment: environment,
   });
   const offset = nextOffsetFromBacklog(backlog);
   onStatus("waiting_for_fresh_private_message");
@@ -190,11 +202,12 @@ export async function runTelegramTransportSmoke({
     token,
     method: "getUpdates",
     body: updateBody,
+    apiEnvironment: environment,
   });
   if (!Array.isArray(updates) || updates.length === 0) {
     throw new TelegramTransportSmokeError(
       "telegram_smoke_update_timeout",
-      "No fresh Telegram Test Environment message arrived during the smoke window.",
+      "No fresh private Telegram message arrived during the smoke window.",
     );
   }
 
@@ -204,6 +217,7 @@ export async function runTelegramTransportSmoke({
     token,
     method: "sendMessage",
     body: sendMessage,
+    apiEnvironment: environment,
   });
   onStatus("telegram_smoke_message_sent");
 

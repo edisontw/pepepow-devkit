@@ -1,6 +1,6 @@
 import { verifyWebhook } from "@pepepow/pepewpay-merchant";
 import { decideTelegramPaymentEvent } from "./index.mjs";
-import { telegramTestApiCall } from "./transport.mjs";
+import { telegramApiCall } from "./transport.mjs";
 
 export const TELEGRAM_E2E_EVENT_TYPES = Object.freeze([
   "payment.partial",
@@ -165,7 +165,8 @@ export async function applyTelegramPaymentWebhook({
   messageId,
   amount,
   checkoutUrl,
-  apiCall = telegramTestApiCall,
+  apiCall = telegramApiCall,
+  telegramApiEnvironment = "test",
   nowSeconds,
 }) {
   const event = verifyWebhook({
@@ -201,6 +202,7 @@ export async function applyTelegramPaymentWebhook({
     token: telegramToken,
     method: "editMessageText",
     body: edit,
+    apiEnvironment: telegramApiEnvironment,
   });
 
   return { ignored: false, event, decision };

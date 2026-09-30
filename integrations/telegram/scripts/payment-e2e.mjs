@@ -10,7 +10,7 @@ import {
   disableTemporaryWebhook,
   registerTemporaryWebhook,
 } from "../src/e2e.mjs";
-import { telegramTestApiCall } from "../src/transport.mjs";
+import { telegramApiCall, normalizeTelegramApiEnvironment } from "../src/transport.mjs";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -36,7 +36,7 @@ function privateMessage(update) {
     typeof update !== "object" ||
     update.message?.chat?.type !== "private"
   ) {
-    throw new Error("A fresh private Telegram Test Environment message is required.");
+    throw new Error("A fresh private Telegram message is required.");
   }
   const chatId = String(update.message.chat.id);
   const messageId = String(update.message.message_id);
@@ -49,8 +49,8 @@ function privateMessage(update) {
   return { chatId, messageId };
 }
 
-async function waitForFreshPrivateMessage(token) {
-  const backlog = await telegramTestApiCall({
+async function waitForFreshPrivateMessage(token, apiEnvironment) {
+  const backlog = await telegramApiCall({
     token,
     method: "getUpdates",
     body: {
@@ -59,11 +59,12 @@ async function waitForFreshPrivateMessage(token) {
       timeout: 0,
       allowed_updates: ["message"],
     },
+    apiEnvironment,
   });
   const last = Array.isArray(backlog) ? backlog.at(-1) : null;
   const offset = Number.isInteger(last?.update_id) ? last.update_id + 1 : undefined;
 
-  console.log("Waiting for one fresh private message in the Telegram Test Environment...");
+  console.log(`Waiting for one fresh private message in Telegram ${apiEnvironment} environment...`);
   const body = {
     limit: 1,
     timeout: 50,
@@ -71,13 +72,14 @@ async function waitForFreshPrivateMessage(token) {
   };
   if (offset !== undefined) body.offset = offset;
 
-  const updates = await telegramTestApiCall({
+  const updates = await telegramApiCall({
     token,
     method: "getUpdates",
     body,
+    apiEnvironment,
   });
   if (!Array.isArray(updates) || updates.length === 0) {
-    throw new Error("No fresh Telegram Test Environment message arrived.");
+    throw new Error("No fresh private Telegram message arrived.");
   }
   return privateMessage(updates[0]);
 }
@@ -104,6 +106,7 @@ function normalizedHeaders(headers) {
 
 const config = {
   telegramToken: required("TELEGRAM_BOT_TOKEN"),
+  telegramApiEnvironment: normalizeTelegramApiEnvironment(process.env.TELEGRAM_API_ENV ?? "test"),
   apiKey: required("PEPEW_MERCHANT_API_KEY"),
   receiveAddress: required("PEPEW_RECEIVE_ADDRESS"),
   publicWebhookUrl: required("PEPEW_PUBLIC_WEBHOOK_URL"),
@@ -183,6 +186,7 @@ const server = createServer(async (req, res) => {
       messageId: state.telegramMessageId,
       amount: config.amount,
       checkoutUrl: state.checkoutUrl,
+      telegramApiEnvironment: config.telegramApiEnvironment,
     });
 
     if (!result.ignored && result.decision?.apply) {
@@ -221,15 +225,16 @@ try {
   state.signingSecret = registration.signingSecret;
   console.log("Temporary Payment Platform webhook endpoint registered.");
 
-  const bot = await telegramTestApiCall({
+  const bot = await telegramApiCall({
     token: config.telegramToken,
     method: "getMe",
     body: {},
+    apiEnvironment: config.telegramApiEnvironment,
   });
-  if (!Number.isInteger(bot?.id)) throw new Error("Telegram test bot identity is invalid.");
-  console.log("Telegram test bot authenticated.");
+  if (!Number.isInteger(bot?.id)) throw new Error("Telegram bot identity is invalid.");
+  console.log(`Telegram ${config.telegramApiEnvironment} bot authenticated.`);
 
-  const incoming = await waitForFreshPrivateMessage(config.telegramToken);
+  const incoming = await waitForFreshPrivateMessage(config.telegramToken, config.telegramApiEnvironment);
   const merchantClient = new MerchantClient({
     apiKey: config.apiKey,
     apiOrigin: config.apiOrigin,
@@ -246,10 +251,11 @@ try {
     checkoutBaseUrl: config.checkoutBaseUrl,
   });
 
-  const sent = await telegramTestApiCall({
+  const sent = await telegramApiCall({
     token: config.telegramToken,
     method: "sendMessage",
     body: checkout.sendMessage,
+    apiEnvironment: config.telegramApiEnvironment,
   });
   if (!Number.isInteger(sent?.message_id)) {
     throw new Error("Telegram sendMessage response is invalid.");
