@@ -90,6 +90,10 @@ const server = createServer(async (req, res) => {
     }
 
     const command = extractDiscordPaymentCommand(interaction);
+    const paymentStyle = buildDiscordPayMessage({
+      amount: command.amount,
+      checkoutUrl: "https://pay.pepepow.net/",
+    });
 
     // This transport smoke is intentionally non-payment. Respond immediately
     // so Discord is never waiting on Payment Platform or another network hop.
@@ -108,10 +112,6 @@ const server = createServer(async (req, res) => {
     }
     seenInteractions.add(command.interactionId);
 
-    const paymentStyle = buildDiscordPayMessage({
-      amount: command.amount,
-      checkoutUrl: "https://pay.pepepow.net/",
-    });
     const message = {
       ...paymentStyle,
       content:
@@ -120,11 +120,20 @@ const server = createServer(async (req, res) => {
         `Requested test amount: ${command.amount} PEPEW`,
     };
 
-    await createDiscordChannelMessage({
-      token: config.botToken,
-      channelId: command.channelId,
-      message,
-    });
+    try {
+      await createDiscordChannelMessage({
+        token: config.botToken,
+        channelId: command.channelId,
+        message,
+      });
+    } catch (error) {
+      if (!resolved) {
+        resolved = true;
+        finish.reject(error);
+      }
+      return;
+    }
+
     console.log(
       "Discord transport smoke message sent with the PepewPay HTTPS link button.",
     );
