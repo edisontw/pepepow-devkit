@@ -116,6 +116,14 @@ jobs:
         run: npm test
         working-directory: integrations/telegram
 
+      - name: Install Discord adapter contract tests
+        run: npm install --no-audit --no-fund
+        working-directory: integrations/discord
+
+      - name: Test Discord adapter contract
+        run: npm test
+        working-directory: integrations/discord
+
   woocommerce-adapter:
     runs-on: ubuntu-latest
     timeout-minutes: 5
