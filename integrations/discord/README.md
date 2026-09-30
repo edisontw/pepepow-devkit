@@ -1,6 +1,6 @@
 # PEPEW Discord Merchant Payment Adapter
 
-Status: **I5.6 contract baseline started**
+Status: **I5.6 in progress — live transport accepted; real payment/webhook E2E harness ready**
 
 This directory is the merchant-side Discord payment adapter for the PEPEW
 Payment Platform. It is not a wallet and contains no mnemonic, private-key,
@@ -12,20 +12,21 @@ The intended Discord flow is:
 
 ```text
 Discord slash command / interaction
-  -> merchant backend acknowledges/defer quickly
+  -> exact-body Ed25519 verification
+  -> immediate acknowledgement
   -> stable hashed payment identity
   -> authoritative Payment API create/recovery
   -> normal Discord bot channel message with a PepewPay link button
+  -> integrated Wallet
   -> signed Payment Platform webhook
   -> edit the same Discord bot message by increasing payment_version
 ```
 
-A normal bot channel message is preferred for the durable payment-status
-surface instead of relying on a short-lived interaction token for later
-confirmation updates.
+A normal bot channel message is the durable payment-status surface. Long-lived
+confirmation updates do not depend on a Discord interaction token.
 
 Payment authority remains in `pay.pepepow.net`. Wallet handoff remains
-non-custodial and signing remains client-side.
+non-custodial and transaction signing remains client-side.
 
 ## Stable identity
 
@@ -50,19 +51,18 @@ PEPEW_MERCHANT_API_KEY
 PEPEW_WEBHOOK_SIGNING_SECRET
 ```
 
-A later HTTP interactions transport will additionally verify Discord request
-signatures using the application's public verification key. No secret belongs
-in the PepewPay checkout URL, PEPEW Payment URI, Discord-visible message, logs,
-or GitHub.
+The Discord application public key and application ID are public identifiers.
+No secret belongs in the PepewPay checkout URL, PEPEW Payment URI,
+Discord-visible message, logs, GitHub, or command-line arguments.
 
 ## Current baseline
 
-Implemented without Discord credentials or network access:
+Implemented:
 
-- exact-raw-body Ed25519 interaction signature verification using Discord's application public key
+- exact-raw-body Ed25519 interaction signature verification using Discord's
+  application public key
 - PING -> PONG response contract
 - `/pepew-pay` application-command parsing with the amount carried as a string
-- deferred interaction response contract for the future real-payment path
 - stable hashed merchant reference and idempotency key
 - exact PEPEW amount validation
 - Payment API create through `@pepepow/pepewpay-merchant`
@@ -72,6 +72,11 @@ Implemented without Discord credentials or network access:
 - increasing-`payment_version` ordering
 - confirmation-safe `overpaid` handling
 - terminal paid/expired/error mapping
+- normal bot channel-message create and edit helpers
+- bounded credential-free transport harness
+- bounded real Payment Platform/webhook E2E harness
+- exact-body Payment Platform webhook verification before Discord message edits
+- temporary filtered webhook registration and cleanup
 
 ## Test
 
@@ -87,50 +92,49 @@ npm install
 npm test
 ```
 
-The contract tests use no Discord token, Payment Platform credential, PEPEW
-funds, or external network.
+The deterministic tests use no Discord token, Payment Platform credential,
+PEPEW funds, or external network.
 
-## Next increment
+## Live transport acceptance
 
-The next small step is the external Discord transport smoke:
+The dedicated Discord application transport was exercised on 2026-09-30.
 
-1. create a dedicated Discord application/bot and test-server installation;
-2. expose one temporary HTTPS Interactions Endpoint URL to a localhost listener;
-3. let Discord validate the endpoint with a signed PING;
-4. register one guild-scoped `/pepew-pay` test command;
-5. receive one signed command and send one ordinary bot channel message with a test-only PepewPay link button;
-6. keep production Payment creation disabled during this transport smoke.
+Observed live path:
 
-The HTTP interactions path deliberately avoids the Message Content privileged
-intent and does not require a persistent Gateway connection. The command amount
-is a string option so PEPEW's exact 8-decimal amount never depends on Discord or
-JavaScript floating-point serialization.
+```text
+Discord signed PING
+  -> PONG
+  -> /pepew-pay amount:0.1
+  -> signed interaction accepted
+  -> immediate private test-only acknowledgement
+  -> ordinary bot channel message
+  -> HTTPS PepewPay test button
+```
 
-The real-payment path will acknowledge/defer promptly, then use a normal bot
-channel message as the durable status surface. Discord interaction tokens are
-time-limited, so authoritative confirmation updates must not depend on retaining
-an interaction token.
+No Payment Platform invoice, merchant API key, webhook endpoint, PEPEW funds,
+wallet secret, or signing operation was used in that transport smoke.
 
-Only after transport smoke passes should the adapter add the real Payment
-Platform/webhook E2E path.
+The first live run exposed a harness-only shutdown issue after the ordinary bot
+message had already been delivered successfully. The listener shutdown was
+hardened in commit `4b508ee4e0b3dfe4af2e530db406e2e17d495c92` by closing idle
+HTTP connections and bounding final socket cleanup. This did not change the
+Discord transport or payment contract.
 
+The application may appear offline in Discord because this adapter uses HTTP
+Interactions instead of maintaining a Gateway/WebSocket session.
 
 ## Operator transport smoke
-
-The transport smoke intentionally creates **no Payment Platform invoice**. It
-requires a dedicated Discord application/bot installed in a test server with
-permission to send messages in the test channel.
 
 Required values:
 
 ```text
-DISCORD_PUBLIC_KEY        # public, from Developer Portal General Information
+DISCORD_PUBLIC_KEY        # public
 DISCORD_APPLICATION_ID    # public
 DISCORD_GUILD_ID          # public test-server ID
 DISCORD_BOT_TOKEN         # secret; server-side only
 ```
 
-The smoke listener defaults to:
+The transport listener defaults to:
 
 ```text
 127.0.0.1:8789/pepew-discord-e2e/interactions
@@ -139,59 +143,163 @@ The smoke listener defaults to:
 Expose only that path through a temporary HTTPS reverse proxy. Do not expose
 port 8789 directly.
 
-Start the listener first:
+Start the listener:
 
 ```bash
 cd integrations/discord
 
+export DISCORD_PUBLIC_KEY="<application public key>"
 read -rsp "Discord bot token: " DISCORD_BOT_TOKEN; echo
 export DISCORD_BOT_TOKEN
-export DISCORD_PUBLIC_KEY="<application public key>"
 
 npm run smoke:transport
 ```
 
-While it is running, configure the public HTTPS URL as the application's
-Interactions Endpoint URL in Discord Developer Portal. Discord should send a
-signed PING; the terminal should report:
-
-```text
-Verified Discord PING acknowledged.
-```
-
-In a separate shell, register/update the guild-scoped test command:
+Register/update the guild-scoped command in another shell:
 
 ```bash
 cd integrations/discord
 
-read -rsp "Discord bot token: " DISCORD_BOT_TOKEN; echo
-export DISCORD_BOT_TOKEN
 export DISCORD_APPLICATION_ID="<application id>"
 export DISCORD_GUILD_ID="<test server id>"
+read -rsp "Discord bot token: " DISCORD_BOT_TOKEN; echo
+export DISCORD_BOT_TOKEN
 
 npm run setup:test-command
 ```
 
-Then run in the selected test channel:
+Then run:
 
 ```text
 /pepew-pay amount:0.1
 ```
 
-Successful smoke behavior:
-
-- Discord verifies the signed interaction and receives an immediate private
-  test-only acknowledgement;
-- the bot posts one ordinary channel message;
-- the channel message contains a HTTPS PepewPay link button;
-- no merchant API key, Payment Platform webhook, invoice, PEPEW funds, wallet
-  key, or signing operation is used.
-
-After the smoke, clear the bot token from each shell:
+After the smoke:
 
 ```bash
 unset DISCORD_BOT_TOKEN
 ```
 
-Do not paste the bot token into chat, GitHub, command-line arguments, or logs.
-If it is disclosed, reset it in the Discord Developer Portal before continuing.
+## Operator real payment/webhook E2E
+
+The bounded operator harness is:
+
+```text
+scripts/payment-e2e.mjs
+src/e2e.mjs
+```
+
+It uses one localhost HTTP server for two narrow paths:
+
+```text
+/pepew-discord-e2e/interactions
+/pepew-discord-e2e/webhooks/pepew
+```
+
+The default listener remains `127.0.0.1:8789`. Expose only the two exact HTTPS
+paths through the temporary reverse proxy; never expose port 8789 directly.
+
+The E2E harness:
+
+1. starts the localhost listener;
+2. registers one temporary filtered Payment Platform webhook endpoint;
+3. waits for one signed `/pepew-pay` interaction;
+4. accepts only the configured small E2E amount;
+5. immediately acknowledges the Discord interaction;
+6. creates exactly one real Payment Platform invoice through the merchant SDK;
+7. posts one ordinary Discord channel message with the real PepewPay capability
+   URL;
+8. verifies Payment Platform webhook HMAC against the exact raw request body;
+9. ignores another payment, a merchant-reference mismatch, and stale/duplicate
+   `payment_version` values;
+10. edits the same Discord channel message for newer authoritative states;
+11. waits for a terminal paid/expired state;
+12. disables the temporary webhook endpoint during normal cleanup.
+
+The temporary endpoint subscribes only to:
+
+```text
+payment.partial
+payment.paid_unconfirmed
+payment.paid_confirmed
+payment.overpaid
+payment.expired
+```
+
+Required values:
+
+```text
+DISCORD_PUBLIC_KEY
+DISCORD_APPLICATION_ID
+DISCORD_BOT_TOKEN
+PEPEW_MERCHANT_API_KEY
+PEPEW_RECEIVE_ADDRESS
+PEPEW_PUBLIC_WEBHOOK_URL
+```
+
+Recommended bounded live values:
+
+```text
+PEPEW_PUBLIC_WEBHOOK_URL=https://pepepow.net/pepew-discord-e2e/webhooks/pepew
+PEPEW_E2E_AMOUNT=0.1
+PEPEW_CONFIRMATIONS=1
+```
+
+Enter secrets without putting them in shell history:
+
+```bash
+cd integrations/discord
+npm test
+
+export DISCORD_PUBLIC_KEY="<application public key>"
+export DISCORD_APPLICATION_ID="<application id>"
+export PEPEW_RECEIVE_ADDRESS="<merchant receiving address>"
+export PEPEW_PUBLIC_WEBHOOK_URL="https://pepepow.net/pepew-discord-e2e/webhooks/pepew"
+export PEPEW_E2E_AMOUNT="0.1"
+export PEPEW_CONFIRMATIONS="1"
+
+read -rsp "Discord bot token: " DISCORD_BOT_TOKEN; echo
+export DISCORD_BOT_TOKEN
+read -rsp "PEPEW merchant API key: " PEPEW_MERCHANT_API_KEY; echo
+export PEPEW_MERCHANT_API_KEY
+
+npm run smoke:payment-e2e
+```
+
+When the harness is ready, run exactly once in the selected Discord test
+channel:
+
+```text
+/pepew-pay amount:0.1
+```
+
+The bot should post one ordinary message containing a real PepewPay button.
+Complete that payment through the integrated Wallet from a payer address
+different from `PEPEW_RECEIVE_ADDRESS`.
+
+Expected authoritative progression:
+
+```text
+paid_unconfirmed
+  -> paid_confirmed
+  -> same Discord message updated
+  -> terminal state: paid
+```
+
+After the run:
+
+```bash
+unset DISCORD_BOT_TOKEN PEPEW_MERCHANT_API_KEY
+unset PEPEW_RECEIVE_ADDRESS PEPEW_PUBLIC_WEBHOOK_URL
+unset PEPEW_E2E_AMOUNT PEPEW_CONFIRMATIONS
+```
+
+The one-time webhook signing secret is returned by the Payment Platform and kept
+in process memory only. Do not print or persist it.
+
+If cleanup reports that temporary webhook disable failed, disable that endpoint
+manually before ending the acceptance session.
+
+I5.6 is not complete until a real payment passes from a payer address different
+from the merchant receiving address and the same Discord message is updated from
+authoritative signed webhook state.
