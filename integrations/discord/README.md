@@ -230,7 +230,6 @@ Required values:
 
 ```text
 DISCORD_PUBLIC_KEY
-DISCORD_APPLICATION_ID
 DISCORD_BOT_TOKEN
 PEPEW_MERCHANT_API_KEY
 PEPEW_RECEIVE_ADDRESS
@@ -252,7 +251,6 @@ cd integrations/discord
 npm test
 
 export DISCORD_PUBLIC_KEY="<application public key>"
-export DISCORD_APPLICATION_ID="<application id>"
 export PEPEW_RECEIVE_ADDRESS="<merchant receiving address>"
 export PEPEW_PUBLIC_WEBHOOK_URL="https://pepepow.net/pepew-discord-e2e/webhooks/pepew"
 export PEPEW_E2E_AMOUNT="0.1"
@@ -294,8 +292,11 @@ unset PEPEW_RECEIVE_ADDRESS PEPEW_PUBLIC_WEBHOOK_URL
 unset PEPEW_E2E_AMOUNT PEPEW_CONFIRMATIONS
 ```
 
-The one-time webhook signing secret is returned by the Payment Platform and kept
-in process memory only. Do not print or persist it.
+The signed Discord interaction itself supplies the authenticated
+`application_id` used for stable payment identity; the real-payment harness
+does not require a second operator-supplied application ID. The one-time webhook
+signing secret is returned by the Payment Platform and kept in process memory
+only. Do not print or persist it.
 
 If cleanup reports that temporary webhook disable failed, disable that endpoint
 manually before ending the acceptance session.
