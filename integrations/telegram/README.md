@@ -1,6 +1,6 @@
 # PEPEW Telegram Merchant Payment Adapter
 
-Status: **I5.5 transport smoke accepted; payment/webhook E2E harness ready**
+Status: **I5.5 complete — production Telegram payment/webhook E2E accepted 2026-09-30**
 
 This directory tests the next Phase I merchant/payment adapter after WooCommerce.
 
@@ -183,10 +183,7 @@ The endpoint is disabled when the test reaches a terminal state, times out, or
 the harness exits through its normal cleanup path. The one-time signing secret
 is kept in process memory only and is never written to the repository.
 
-A public HTTPS tunnel or equivalent is still required to route the configured
-webhook URL to the local listener (default `127.0.0.1:8788`). Keep the tunnel
-tool in a separate terminal. For example, after creating an HTTPS tunnel to that
-local port, set the full public callback URL ending in `/webhooks/pepew`.
+A public HTTPS route is required to reach the local listener (default `127.0.0.1:8788`). This may be a temporary HTTPS tunnel or a narrow reverse-proxy route on a suitable test host. Keep port 8788 bound to localhost and expose only the callback path. Set the full public callback URL ending in `/webhooks/pepew`.
 
 Enter secrets without putting their values in shell history:
 
@@ -231,6 +228,18 @@ https://core.telegram.org/bots/features#the-test-environment
 For the PEPEW merchant contract, see `docs/MERCHANT_QUICK_START.md` and
 `docs/TESTING_AND_SANDBOX.md`.
 
+
+
+Production acceptance record (2026-09-30):
+
+- dedicated normal Telegram merchant/payment bot authenticated through `TELEGRAM_API_ENV=production`
+- real 0.1 PEPEW invoice created through the authoritative Payment Platform
+- payer address differed from the merchant receiving address
+- temporary HTTPS Apache reverse-proxy callback reached the localhost receiver at `127.0.0.1:8788`
+- exact-body signed webhook advanced the payment through `paid_unconfirmed` and `paid_confirmed`
+- Telegram message update completed and the harness reached terminal state `paid`
+- temporary Payment Platform webhook endpoint was disabled during cleanup
+- no bot token, merchant API key, webhook signing secret, mnemonic, or private key was stored in GitHub/chat
 
 ## Normal Telegram production-environment bot
 
