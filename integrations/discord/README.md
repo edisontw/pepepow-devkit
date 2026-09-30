@@ -1,6 +1,6 @@
 # PEPEW Discord Merchant Payment Adapter
 
-Status: **I5.6 in progress — live transport accepted; real payment/webhook E2E harness ready**
+Status: **I5.6 complete — live Discord payment/webhook E2E accepted 2026-10-01**
 
 This directory is the merchant-side Discord payment adapter for the PEPEW
 Payment Platform. It is not a wallet and contains no mnemonic, private-key,
@@ -301,6 +301,33 @@ only. Do not print or persist it.
 If cleanup reports that temporary webhook disable failed, disable that endpoint
 manually before ending the acceptance session.
 
-I5.6 is not complete until a real payment passes from a payer address different
-from the merchant receiving address and the same Discord message is updated from
-authoritative signed webhook state.
+## Production acceptance record
+
+Live acceptance completed on 2026-10-01 using the dedicated Discord application
+and the authoritative Payment Platform.
+
+Observed path:
+
+```text
+Discord /pepew-pay amount:0.1
+  -> exact-body Ed25519 verification
+  -> immediate private acknowledgement
+  -> real 0.1 PEPEW Payment Platform invoice
+  -> ordinary Discord bot channel message + real PepewPay button
+  -> integrated Wallet payment from a payer address different from the merchant receiving address
+  -> signed Payment Platform webhook
+  -> paid_unconfirmed
+  -> paid_confirmed
+  -> same Discord bot message updated to confirmed
+```
+
+The adapter remained merchant-side only. The server did not receive a mnemonic
+or private key and did not perform transaction signing. The bot token, merchant
+API key, and one-time webhook signing secret remained server-side only and were
+not committed to GitHub or pasted into chat.
+
+The first real-payment attempt exposed an operator-supplied application-ID
+mismatch after the Discord request had already passed Ed25519 verification.
+The E2E harness was simplified to use the authenticated `application_id`
+contained in the verified Discord interaction, removing that redundant
+operator-supplied identity check.
