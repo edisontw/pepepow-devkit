@@ -24,6 +24,7 @@ integrations/
   woocommerce/
     pepew-payments/
   telegram/
+  discord/
 
 test-vectors/
   payment-uri-v1.json
@@ -167,7 +168,7 @@ Before substantial work, read the latest roadmap and relevant repo documentation
 
 ## Current status
 
-As of 2026-09-26:
+As of 2026-09-30:
 
 - repository initialized
 - Phase A protocol foundation is complete
@@ -189,5 +190,6 @@ As of 2026-09-26:
 - Phase I I5.1 adds the first WooCommerce classic-checkout gateway skeleton with stable order identity, exact amount snapshotting, Payment API create/recovery, and PepewPay redirect
 - Phase I I5.2 adds exact-body signed webhook verification, durable event/version handling, and reorg-safe Woo order lifecycle policy
 - Phase I I5.3 adds WooCommerce Checkout Blocks and passes a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix in both legacy and HPOS storage modes
-- Phase I I5.4 now has an allowlist installable ZIP, clean package install/upgrade/uninstall/dependency tests, and retry/recovery/webhook/reorg runtime acceptance; one externally reachable staging/live paid Woo E2E remains before production-ready status
-- Phase I I5.5 has started the Telegram merchant/payment adapter with deterministic stable identity/idempotency, PepewPay inline-button payloads, exact-reference recovery, reorg-safe payment-version handling, and confirmation-safe overpayment handling; it complements rather than replaces the payer-side Telegram wallet/Mini App in `edisontw/pepepow-wallet-suite`; external Telegram test-environment transport smoke remains
+- Phase I I5.4 WooCommerce is complete, including externally reachable paid checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid acceptance on 2026-09-30
+- Phase I I5.5 Telegram merchant/payment adapter is complete, including normal production Bot API transport and real 0.1 PEPEW payment/webhook/message-update E2E on 2026-09-30
+- Phase I I5.6 Discord merchant/payment adapter has started with a credential-free contract baseline: hashed interaction identity/idempotency, Payment API create/recovery, Discord link-button payloads, reorg-safe payment-version handling, and confirmation-safe overpayment logic
