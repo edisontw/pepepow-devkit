@@ -65,11 +65,26 @@ Payment URI fields, or chat-visible URLs.
 ## Test
 
 The local test uses no Telegram token, PEPEW funds, Payment Platform credential,
-or external network:
+or external network.
+
+On a fresh clone, build the local merchant SDK first because the Telegram
+integration imports its compiled `dist/index.js`:
+
+```bash
+cd packages/pepewpay-merchant
+npm install
+npm run build
+
+cd ../../integrations/telegram
+npm install
+npm test
+```
+
+After the merchant SDK has already been built, subsequent Telegram test runs only
+need:
 
 ```bash
 cd integrations/telegram
-npm install
 npm test
 ```
 
