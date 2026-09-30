@@ -112,7 +112,6 @@ async function closeServer(server) {
 
 const config = {
   publicKey: required("DISCORD_PUBLIC_KEY"),
-  applicationId: required("DISCORD_APPLICATION_ID"),
   botToken: required("DISCORD_BOT_TOKEN"),
   apiKey: required("PEPEW_MERCHANT_API_KEY"),
   receiveAddress: required("PEPEW_RECEIVE_ADDRESS"),
@@ -238,9 +237,6 @@ async function handleInteraction(req, res) {
 
   const command = extractDiscordPaymentCommand(interaction);
   console.log("Verified Discord /pepew-pay interaction received.");
-  if (command.applicationId !== config.applicationId) {
-    throw new DiscordInteractionError("discord_application_id_mismatch");
-  }
 
   let amountMatches = false;
   try {
