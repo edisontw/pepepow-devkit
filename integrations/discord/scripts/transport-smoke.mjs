@@ -44,8 +44,31 @@ function json(res, status, body) {
     "Content-Type": "application/json",
     "Content-Length": payload.length,
     "Cache-Control": "no-store",
+    "Connection": "close",
   });
   res.end(payload);
+}
+
+async function closeServer(server) {
+  await new Promise((resolve) => {
+    let settled = false;
+    let forceTimer;
+
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(forceTimer);
+      resolve();
+    };
+
+    server.close(done);
+    server.closeIdleConnections?.();
+
+    forceTimer = setTimeout(() => {
+      server.closeAllConnections?.();
+      done();
+    }, 1000);
+  });
 }
 
 const config = {
@@ -70,7 +93,10 @@ const server = createServer(async (req, res) => {
   try {
     const requestUrl = new URL(req.url ?? "/", "http://localhost");
     if (req.method !== "POST" || requestUrl.pathname !== config.path) {
-      res.writeHead(404, { "Cache-Control": "no-store" });
+      res.writeHead(404, {
+        "Cache-Control": "no-store",
+        "Connection": "close",
+      });
       res.end();
       return;
     }
@@ -143,11 +169,17 @@ const server = createServer(async (req, res) => {
     }
   } catch (error) {
     if (error instanceof DiscordInteractionError) {
-      res.writeHead(401, { "Cache-Control": "no-store" });
+      res.writeHead(401, {
+        "Cache-Control": "no-store",
+        "Connection": "close",
+      });
       res.end();
       return;
     }
-    res.writeHead(500, { "Cache-Control": "no-store" });
+    res.writeHead(500, {
+      "Cache-Control": "no-store",
+      "Connection": "close",
+    });
     res.end();
     if (!resolved) {
       resolved = true;
@@ -177,5 +209,5 @@ const timeout = new Promise((_, reject) => {
 try {
   await Promise.race([finished, timeout]);
 } finally {
-  await new Promise((resolve) => server.close(resolve));
+  await closeServer(server);
 }
