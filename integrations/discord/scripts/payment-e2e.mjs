@@ -237,6 +237,7 @@ async function handleInteraction(req, res) {
   }
 
   const command = extractDiscordPaymentCommand(interaction);
+  console.log("Verified Discord /pepew-pay interaction received.");
   if (command.applicationId !== config.applicationId) {
     throw new DiscordInteractionError("discord_application_id_mismatch");
   }
@@ -346,8 +347,13 @@ const server = createServer(async (req, res) => {
       await handleInteraction(req, res);
     } catch (error) {
       if (error instanceof DiscordInteractionError) {
+        console.error("Discord interaction rejected: " + error.code);
         empty(res, 401);
       } else {
+        console.error(
+          "Discord interaction handler failed before acknowledgement: " +
+            (error?.name ?? "Error"),
+        );
         empty(res, 500);
       }
     }
