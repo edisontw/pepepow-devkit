@@ -1,8 +1,8 @@
 # WooCommerce Adapter Plan
 
-Last updated: 2026-09-26
+Last updated: 2026-10-01
 
-Status: **I5.4 automated acceptance complete — staging/live paid E2E remains**
+Status: **I5.4 COMPLETE — packaged/runtime acceptance and externally reachable paid E2E verified 2026-09-30**
 
 Location:
 
@@ -131,7 +131,7 @@ I5.3 verification:
 - existing Woo unit/static checks, merchant sample, DevKit/SDK/PepewPay, and `pepewpay-dist` remained green
 ## I5.4 — distributable plugin
 
-Status: **IN PROGRESS — automated packaging/runtime acceptance complete; one staging/live paid E2E remains**
+Status: **COMPLETE — packaged plugin and externally reachable paid E2E verified 2026-09-30**
 
 - [x] build an allowlist-based `pepew-payments.zip` with one plugin root
 - [x] include runtime PHP/JS, README, uninstall handler, and MIT license only
@@ -147,7 +147,7 @@ Status: **IN PROGRESS — automated packaging/runtime acceptance complete; one s
 - [x] exercise uncertain-create transport loss + exact merchant-reference recovery
 - [x] exercise signed webhook duplicate/stale/version/reorg lifecycle in both legacy and HPOS runtime modes
 - [x] add install/upgrade/uninstall, webhook rotation, rollback, and production acceptance documentation
-- [ ] complete one externally reachable staging/live Woo -> PepewPay -> wallet -> Payment Platform -> webhook -> Woo order paid E2E
+- [x] complete one externally reachable staging/live Woo -> PepewPay -> wallet -> Payment Platform -> webhook -> Woo order paid E2E
 
 I5.4 automated verification:
 
@@ -157,12 +157,12 @@ I5.4 automated verification:
 - `woocommerce-package`, `WooCommerce runtime (legacy)`, and `WooCommerce runtime (hpos)` all passed
 - CI artifact name: `pepew-payments-woocommerce`
 - the runtime merchant lifecycle test covers retry/recovery/webhook/reorg without production credentials
-- production/staging paid E2E remains intentionally separate because it requires an externally reachable Woo site, merchant credentials, registered webhook endpoint, and one real wallet-signed transaction
+- production/staging paid E2E remained intentionally separate from automated CI because it required an externally reachable Woo site, merchant credentials, a registered webhook endpoint, and one real wallet-signed transaction; that gate passed on 2026-09-30
 - 2026-09-27 staging exposed a decimal-rendering interoperability bug (`0.10000000` Woo snapshot vs `0.1` Payment API response); the gateway now compares exact 8-decimal atom values instead of decimal string formatting, with create/recovery runtime regression coverage
 - see `docs/WOOCOMMERCE_DEPLOYMENT.md` for the exact staging/live acceptance checklist
 - 2026-09-27 manual Windows/Local staging reached a public Cloudflare HTTPS WordPress site, loaded the exact CI ZIP, verified Payment API Bearer access, registered/configured the signed webhook receiver, and reached the PepewPay -> PEPEW Light web-wallet handoff
 - that staging run exposed and fixed decimal-rendering interoperability (`0.10000000` vs `0.1`) and an overpayment confirmation-policy edge case; both now have regression coverage
-- the final real paid Woo webhook/confirmation closeout was intentionally not claimed complete; testing paused before a representative payment from a payer address different from the merchant receiving address
+- final externally reachable acceptance passed on 2026-09-30 with a payer address different from the merchant receiving address: Woo checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid
 ## Security boundary
 
 - merchant API key: WordPress server only

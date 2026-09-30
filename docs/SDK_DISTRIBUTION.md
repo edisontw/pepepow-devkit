@@ -1,6 +1,6 @@
 # PEPEW SDK Distribution Policy
 
-Last updated: 2026-09-26
+Last updated: 2026-10-01
 
 This document defines the Phase I package-distribution baseline for reusable
 PEPEW developer packages in `pepepow-devkit`.
@@ -158,12 +158,7 @@ a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix with both legacy
 order storage and HPOS enabled. The plugin now declares both
 `cart_checkout_blocks` and `custom_order_tables` compatibility.
 
-I5.4 automated acceptance is now complete: CI builds an allowlist-based
-WooCommerce ZIP, install-tests it in a clean WordPress/WooCommerce runtime,
-verifies dependency/upgrade/uninstall behavior, and exercises retry/recovery/
-webhook/reorg flows in both legacy and HPOS modes. The remaining WooCommerce
-gate is one externally reachable staging/live paid checkout E2E before the
-adapter is called production-ready.
+I5.4 is complete: CI builds an allowlist-based WooCommerce ZIP, install-tests it in a clean WordPress/WooCommerce runtime, verifies dependency/upgrade/uninstall behavior, and exercises retry/recovery/webhook/reorg flows in both legacy and HPOS modes. The externally reachable staging/live paid checkout E2E also passed on 2026-09-30 through Woo checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid.
 
 The external npm `@pepepow` scope ownership task can proceed independently;
 it does not block I5 adapter work.

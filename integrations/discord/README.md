@@ -1,6 +1,6 @@
 # PEPEW Discord Merchant Payment Adapter
 
-Status: **I5.6 complete — live Discord payment/webhook E2E accepted 2026-10-01**
+Status: **I5.6 functional acceptance complete — final runtime/temporary-infrastructure cleanup audit pending**
 
 This directory is the merchant-side Discord payment adapter for the PEPEW
 Payment Platform. It is not a wallet and contains no mnemonic, private-key,
@@ -331,3 +331,16 @@ mismatch after the Discord request had already passed Ed25519 verification.
 The E2E harness was simplified to use the authenticated `application_id`
 contained in the verified Discord interaction, removing that redundant
 operator-supplied identity check.
+
+Closure evidence boundary (2026-10-01): the captured operator evidence proves the real payment reached `paid_unconfirmed`, then `paid_confirmed`, and the same ordinary Discord bot message was updated to confirmed. The previous session did not retain the final terminal lines proving `Discord payment E2E terminal state: paid` and `Temporary Payment Platform webhook endpoint disabled.` Therefore cleanup must not be inferred from the Discord UI alone.
+
+Before I5.6 closure is considered fully clean, verify on the temporary test host that:
+
+- [ ] nothing is listening on `127.0.0.1:8789`
+- [ ] the temporary Payment Platform webhook endpoint is disabled
+- [ ] the temporary Apache `ProxyPass` / `ProxyPassReverse` routes for `/pepew-discord-e2e/interactions` and `/pepew-discord-e2e/webhooks/pepew` are absent
+- [ ] `apache2ctl configtest` passes, Apache is reloaded, and normal `pepepow.net` service remains healthy
+- [ ] the Discord Developer Portal Interactions Endpoint URL no longer points at the deleted temporary test route
+- [ ] temporary shell environment variables/secrets used by the harness are unset
+
+These are operator/runtime cleanup checks only; they do not change the accepted Discord payment contract or the non-custodial boundary.

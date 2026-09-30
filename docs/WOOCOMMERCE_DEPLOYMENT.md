@@ -1,8 +1,8 @@
 # PEPEW Payments for WooCommerce — Install and Production Acceptance
 
-Last updated: 2026-09-26
+Last updated: 2026-10-01
 
-Status: **I5.4 packaging/runtime acceptance implemented; staging/live paid E2E remains the final production-ready gate**
+Status: **I5.4 COMPLETE — packaging/runtime acceptance plus externally reachable paid E2E verified 2026-09-30**
 
 ## Install
 
@@ -109,9 +109,7 @@ CI verifies:
 
 ## Final staging/live acceptance gate
 
-Do not call the plugin production-ready until one externally reachable staging
-or merchant WooCommerce site completes this checklist against the real Payment
-Platform:
+The project production-ready gate was satisfied on 2026-09-30 by an externally reachable real paid E2E. Keep the following as the reusable acceptance checklist for future merchant/staging deployments against the real Payment Platform:
 
 - [ ] install the exact CI-built ZIP
 - [ ] HTTPS storefront and REST webhook endpoint are externally reachable
@@ -135,6 +133,8 @@ Platform:
 Reorg/duplicate-event behavior is covered by deterministic and real Woo runtime
 tests. Do not manufacture fake production webhooks against a real merchant
 order merely to force a reorg scenario.
+
+Project acceptance record (2026-09-30): the externally reachable Woo checkout redirected through PepewPay to the integrated Wallet, the payment was signed client-side from a payer address different from the merchant receiving address, the authoritative Payment Platform delivered the signed webhook progression, and the Woo order reached paid state. No mnemonic/private key or transaction-signing responsibility moved into WordPress or the Payment Platform.
 
 ## Rollback
 
