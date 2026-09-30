@@ -192,4 +192,4 @@ As of 2026-09-30:
 - Phase I I5.3 adds WooCommerce Checkout Blocks and passes a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix in both legacy and HPOS storage modes
 - Phase I I5.4 WooCommerce is complete, including externally reachable paid checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid acceptance on 2026-09-30
 - Phase I I5.5 Telegram merchant/payment adapter is complete, including normal production Bot API transport and real 0.1 PEPEW payment/webhook/message-update E2E on 2026-09-30
-- Phase I I5.6 Discord merchant/payment adapter has started with a credential-free contract baseline: hashed interaction identity/idempotency, Payment API create/recovery, Discord link-button payloads, reorg-safe payment-version handling, and confirmation-safe overpayment logic
+- Phase I I5.6 Discord merchant/payment adapter has passed live HTTP interaction transport acceptance (signed PING, `/pepew-pay`, ordinary bot channel message, HTTPS PepewPay test button) and now includes a bounded real Payment Platform/webhook E2E harness; final 0.1 PEPEW paid acceptance remains pending
