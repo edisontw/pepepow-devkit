@@ -59,6 +59,10 @@ or GitHub.
 
 Implemented without Discord credentials or network access:
 
+- exact-raw-body Ed25519 interaction signature verification using Discord's application public key
+- PING -> PONG response contract
+- `/pepew-pay` application-command parsing with the amount carried as a string
+- deferred interaction response contract for the future real-payment path
 - stable hashed merchant reference and idempotency key
 - exact PEPEW amount validation
 - Payment API create through `@pepepow/pepewpay-merchant`
@@ -88,13 +92,24 @@ funds, or external network.
 
 ## Next increment
 
-The next small step is Discord transport/authentication:
+The next small step is the external Discord transport smoke:
 
-1. verify Discord interaction signatures against the exact request body;
-2. handle PING and one bounded slash-command request;
-3. acknowledge/defer within Discord's interaction deadline;
-4. send one ordinary bot channel message with the PepewPay link button;
-5. keep production Payment creation disabled during the first transport smoke.
+1. create a dedicated Discord application/bot and test-server installation;
+2. expose one temporary HTTPS Interactions Endpoint URL to a localhost listener;
+3. let Discord validate the endpoint with a signed PING;
+4. register one guild-scoped `/pepew-pay` test command;
+5. receive one signed command and send one ordinary bot channel message with a test-only PepewPay link button;
+6. keep production Payment creation disabled during this transport smoke.
+
+The HTTP interactions path deliberately avoids the Message Content privileged
+intent and does not require a persistent Gateway connection. The command amount
+is a string option so PEPEW's exact 8-decimal amount never depends on Discord or
+JavaScript floating-point serialization.
+
+The real-payment path will acknowledge/defer promptly, then use a normal bot
+channel message as the durable status surface. Discord interaction tokens are
+time-limited, so authoritative confirmation updates must not depend on retaining
+an interaction token.
 
 Only after transport smoke passes should the adapter add the real Payment
 Platform/webhook E2E path.
