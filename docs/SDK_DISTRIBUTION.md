@@ -160,5 +160,4 @@ order storage and HPOS enabled. The plugin now declares both
 
 I5.4 is complete: CI builds an allowlist-based WooCommerce ZIP, install-tests it in a clean WordPress/WooCommerce runtime, verifies dependency/upgrade/uninstall behavior, and exercises retry/recovery/webhook/reorg flows in both legacy and HPOS modes. The externally reachable staging/live paid checkout E2E also passed on 2026-09-30 through Woo checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid.
 
-The external npm `@pepepow` scope ownership task can proceed independently;
-it does not block I5 adapter work.
+I5.4, I5.5, and I5.6 are complete, including the Discord temporary-infrastructure cleanup audit. The only remaining Phase I blocker is I1: confirm/control the npm `@pepepow` scope, publish the first tagged public SDK releases, and verify clean registry installation/import.
