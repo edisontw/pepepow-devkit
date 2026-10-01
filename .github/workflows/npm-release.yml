@@ -1,0 +1,99 @@
+name: npm release (trusted publishing)
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to publish
+        required: true
+        type: choice
+        options:
+          - pepew-js
+          - pepewpay-merchant
+      tag:
+        description: Exact package release tag, e.g. pepew-js-v0.1.1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out exact release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Select package and verify tag/version
+        env:
+          RELEASE_PACKAGE: ${{ inputs.package }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$RELEASE_PACKAGE" in
+            pepew-js)
+              package_dir="packages/pepew-js"
+              tag_prefix="pepew-js-v"
+              ;;
+            pepewpay-merchant)
+              package_dir="packages/pepewpay-merchant"
+              tag_prefix="pepewpay-merchant-v"
+              ;;
+            *)
+              echo "Unsupported package."
+              exit 1
+              ;;
+          esac
+
+          exact_tag="$(git describe --tags --exact-match HEAD)"
+          if [[ "$exact_tag" != "$RELEASE_TAG" ]]; then
+            echo "Checked-out commit is not the requested exact tag."
+            exit 1
+          fi
+
+          version="$(node -p "require('./${package_dir}/package.json').version")"
+          expected_tag="${tag_prefix}${version}"
+          if [[ "$RELEASE_TAG" != "$expected_tag" ]]; then
+            echo "Release tag does not match package version."
+            echo "Expected: $expected_tag"
+            exit 1
+          fi
+
+          echo "PACKAGE_DIR=$package_dir" >> "$GITHUB_ENV"
+
+      - name: Use npm version required for trusted publishing
+        run: |
+          npm install --global npm@^11.15.0
+          npm --version
+
+      - name: Install and test release package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PACKAGE_DIR"
+          npm install --no-audit --no-fund
+          npm test
+          npm pack --dry-run
+
+      - name: Publish public package through npm OIDC
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PACKAGE_DIR"
+          npm publish --access public

@@ -69,9 +69,10 @@ to `main` do not publish npm packages.
 The remaining external gate before the first npm release is:
 
 1. confirm npm `@pepepow` scope ownership/control
-2. choose the first-publish authentication path
-3. after the package exists, prefer npm trusted publishing from GitHub Actions
-   using OIDC rather than a long-lived write token
+2. perform the first `0.1.0` publishes interactively with npm account 2FA from an exact tested/tagged commit; do not introduce a long-lived CI write token only for bootstrap
+3. after each package exists, configure npm trusted publishing for GitHub Actions workflow `npm-release.yml`; future releases use OIDC without an npm write token
+
+The exact bootstrap and post-publish verification procedure is in [NPM_FIRST_RELEASE.md](NPM_FIRST_RELEASE.md).
 
 Release credentials must stay in npm/GitHub secret or trusted-publishing
 facilities. Never commit npm tokens.
