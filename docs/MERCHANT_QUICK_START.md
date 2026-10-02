@@ -1,6 +1,6 @@
 # PEPEW Merchant Quick Start
 
-Last updated: 2026-09-26
+Last updated: 2026-10-02
 
 This is the shortest supported path from merchant credentials to a production-shaped PEPEW checkout.
 It assumes the authoritative Payment Platform is `https://pay.pepepow.net`.
@@ -20,16 +20,30 @@ Customer browsers may receive only intended public payment capability data such 
 
 Never send a mnemonic, private key, merchant API key, or webhook signing secret to PepewPay or browser JavaScript.
 
+
+Current production credential scope:
+
+- Payment API v1 still uses one single-merchant Bearer namespace;
+- do **not** distribute the same production merchant API key to multiple
+  independent merchants;
+- Phase K in the canonical server roadmap is adding explicit merchant ownership
+  and scoped/revocable credentials before multi-merchant production onboarding.
+
+This does not change the SDK header contract; the merchant backend still sends
+`Authorization: Bearer <credential>`.
+
 ## 2. Install
 
-Until the first npm registry release is published, build from the DevKit repository:
+The first public merchant SDK release is available from npm:
 
 ```bash
-cd packages/pepewpay-merchant
-npm install
-npm run build
+npm install @pepepow/pepewpay-merchant@0.1.0
+```
 
-cd ../../examples/merchant-app
+For the repository's runnable sample application:
+
+```bash
+cd examples/merchant-app
 npm install
 cp .env.example .env
 ```

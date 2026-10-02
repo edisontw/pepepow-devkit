@@ -30,15 +30,20 @@ test-vectors/
   payment-uri-v1.json
 ```
 
-Primary development sequence:
+Primary development sequence completed through Phase I:
 
 ```text
 pepew-js
   -> PEPEW Payment URI
   -> PepewPay
   -> merchant SDK/helpers
-  -> Phase I merchant onboarding / distribution
+  -> merchant onboarding / distribution
 ```
+
+Current cross-repository priority is Phase K in the server repository:
+multi-merchant credential and ownership isolation. DevKit transport remains
+Bearer-compatible; onboarding docs will be expanded after the scoped server
+credential model is production-validated.
 
 The server-side Payment/Event Gateway and webhook infrastructure belong in `edisontw/pepepow-electrumx-service`.
 
