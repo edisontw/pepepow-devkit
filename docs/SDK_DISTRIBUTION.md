@@ -1,6 +1,6 @@
 # PEPEW SDK Distribution Policy
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 This document defines the Phase I package-distribution baseline for reusable
 PEPEW developer packages in `pepepow-devkit`.
@@ -64,15 +64,16 @@ Both SDK manifests are public-release-ready with MIT licensing,
 `publishConfig.access=public`, and the canonical npm registry. Normal pushes
 to `main` do not publish npm packages.
 
-## 4. Remaining release gate
+## 4. First public release status
 
-The remaining external gate before the first npm release is:
+Completed on 2026-10-02:
 
-1. confirm npm `@pepepow` scope ownership/control
-2. perform the first `0.1.0` publishes interactively with npm account 2FA from an exact tested/tagged commit; do not introduce a long-lived CI write token only for bootstrap
-3. after each package exists, configure npm trusted publishing for GitHub Actions workflow `npm-release.yml`; future releases use OIDC without an npm write token
+1. npm `@pepepow` organization/scope ownership was confirmed under the operator account;
+2. release tags `pepew-js-v0.1.0` and `pepewpay-merchant-v0.1.0` were created from DevKit commit `87dd9199ebc79be156c27d0fab3df4967d762346`, whose CI run was green;
+3. `@pepepow/pepew-js@0.1.0` and `@pepepow/pepewpay-merchant@0.1.0` were published interactively with npm authentication/2FA;
+4. both packages were installed from the public registry into a fresh temporary consumer and their public imports executed successfully.
 
-The exact bootstrap and post-publish verification procedure is in [NPM_FIRST_RELEASE.md](NPM_FIRST_RELEASE.md).
+The bootstrap runbook and future-release procedure are in [NPM_FIRST_RELEASE.md](NPM_FIRST_RELEASE.md). Future releases should use npm trusted publishing through GitHub Actions OIDC rather than introducing a long-lived npm write token.
 
 Release credentials must stay in npm/GitHub secret or trusted-publishing
 facilities. Never commit npm tokens.
@@ -161,4 +162,4 @@ order storage and HPOS enabled. The plugin now declares both
 
 I5.4 is complete: CI builds an allowlist-based WooCommerce ZIP, install-tests it in a clean WordPress/WooCommerce runtime, verifies dependency/upgrade/uninstall behavior, and exercises retry/recovery/webhook/reorg flows in both legacy and HPOS modes. The externally reachable staging/live paid checkout E2E also passed on 2026-09-30 through Woo checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid.
 
-I5.4, I5.5, and I5.6 are complete, including the Discord temporary-infrastructure cleanup audit. The only remaining Phase I blocker is I1: confirm/control the npm `@pepepow` scope, publish the first tagged public SDK releases, and verify clean registry installation/import.
+I1 is complete: both first public SDK packages were published as `0.1.0` from exact release tags and clean public-registry install/import smoke passed on 2026-10-02. I5.4, I5.5, and I5.6 are also complete, including the Discord temporary-infrastructure cleanup audit. Phase I therefore satisfies its distribution and integration exit criteria.

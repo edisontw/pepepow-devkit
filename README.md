@@ -137,11 +137,12 @@ The runnable merchant application is:
 examples/merchant-app/
 ```
 
-The reusable SDK code is MIT-licensed and both SDK package manifests are
-public-release-ready. Normal pushes to `main` never publish npm packages. The
-remaining external release gate is npm `@pepepow` scope ownership/publisher
-setup. CI validates packed artifacts in clean Node consumers before registry
-release.
+The reusable SDK code is MIT-licensed. The first public npm releases are live:
+`@pepepow/pepew-js@0.1.0` and `@pepepow/pepewpay-merchant@0.1.0`. Both were
+published from exact Git tags after green CI and then installed/imported from
+the public registry in a clean consumer. Normal pushes to `main` never publish
+npm packages; subsequent releases are prepared for npm trusted publishing via
+GitHub Actions OIDC.
 
 ## License
 
@@ -168,7 +169,7 @@ Before substantial work, read the latest roadmap and relevant repo documentation
 
 ## Current status
 
-As of 2026-10-01:
+As of 2026-10-02:
 
 - repository initialized
 - Phase A protocol foundation is complete
@@ -183,7 +184,7 @@ As of 2026-10-01:
 - production validation on 2026-09-22 completed a new 0.1 PEPEW checkout through web-wallet handoff, broadcast, `paid_unconfirmed`, and `paid_confirmed`
 - Phase H3 reference merchant flow is complete in `pepepow-electrumx-service`
 - Phase H4 adds the server-side `@pepepow/pepewpay-merchant` helpers and durable-store composition examples
-- Phase I I1 defines MIT/public-ready SDK distribution with npm scope ownership still external
+- Phase I I1 is complete: npm `@pepepow` scope ownership was confirmed, `@pepepow/pepew-js@0.1.0` and `@pepepow/pepewpay-merchant@0.1.0` were published from Git tags, and clean public-registry install/import smoke passed on 2026-10-02
 - Phase I I2 adds a runnable Node + SQLite merchant application with durable idempotency, create recovery, webhook deduplication, and reorg-safe payment_version handling
 - Phase I I3 adds a production merchant Quick Start, secure webhook registration helper, and Express/Fastify exact-raw-body integration patterns
 - Phase I I4 adds deterministic local contract testing plus an explicit bounded live-smoke path without a permanent sandbox service
@@ -193,4 +194,4 @@ As of 2026-10-01:
 - Phase I I5.4 WooCommerce is complete, including externally reachable paid checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid acceptance on 2026-09-30
 - Phase I I5.5 Telegram merchant/payment adapter is complete, including normal production Bot API transport and real 0.1 PEPEW payment/webhook/message-update E2E on 2026-09-30
 - Phase I I5.6 Discord merchant/payment adapter is complete: dedicated HTTP interaction transport plus a real 0.1 PEPEW Payment Platform/webhook E2E reached `paid_unconfirmed` -> `paid_confirmed`, updated the same ordinary Discord bot message, and the temporary runtime/infrastructure cleanup audit was operator-confirmed PASS on 2026-10-01
-- Phase I overall remains open only for I1: first public SDK registry release plus clean registry install/import verification
+- Phase I is CLOSED as of 2026-10-02: I1 distribution, I2 sample app, I3 production guide, I4 testing strategy, and I5 WooCommerce/Telegram/Discord integrations all satisfy their exit criteria

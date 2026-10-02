@@ -1,6 +1,6 @@
 # PEPEW SDK First npm Release
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 This runbook closes Phase I / I1 by publishing the first public SDK releases:
 
@@ -12,6 +12,29 @@ This runbook closes Phase I / I1 by publishing the first public SDK releases:
 The first publish is intentionally interactive. Do not create a long-lived npm
 write token only to bootstrap these packages. After the packages exist, switch
 future releases to npm trusted publishing through GitHub Actions OIDC.
+
+## Completion record
+
+First release completed on 2026-10-02 from DevKit commit
+`87dd9199ebc79be156c27d0fab3df4967d762346` using tags
+`pepew-js-v0.1.0` and `pepewpay-merchant-v0.1.0`.
+
+Published packages:
+
+```text
+@pepepow/pepew-js@0.1.0
+@pepepow/pepewpay-merchant@0.1.0
+```
+
+Clean registry verification passed in a new temporary npm consumer:
+
+```text
+pepew-js registry smoke: PASS
+pepewpay-merchant registry smoke: PASS
+```
+
+The interactive npm session was logged out after verification. npm credentials,
+OTP values, wallet secrets, and merchant secrets were not added to GitHub.
 
 ## 1. Security boundary
 
