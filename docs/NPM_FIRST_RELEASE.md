@@ -36,6 +36,8 @@ pepewpay-merchant registry smoke: PASS
 The interactive npm session was logged out after verification. npm credentials,
 OTP values, wallet secrets, and merchant secrets were not added to GitHub.
 
+Trusted Publisher configuration for both npm packages was completed on 2026-10-02 against `.github/workflows/npm-release.yml`. No long-lived npm write token is required for subsequent releases. The first OIDC-backed publish will be verified on the next legitimate version release rather than consuming a version only for transport testing.
+
 ## 1. Security boundary
 
 Never put any of the following in GitHub, chat, shell command arguments, package

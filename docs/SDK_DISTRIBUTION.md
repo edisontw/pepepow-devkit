@@ -73,7 +73,7 @@ Completed on 2026-10-02:
 3. `@pepepow/pepew-js@0.1.0` and `@pepepow/pepewpay-merchant@0.1.0` were published interactively with npm authentication/2FA;
 4. both packages were installed from the public registry into a fresh temporary consumer and their public imports executed successfully.
 
-The bootstrap runbook and future-release procedure are in [NPM_FIRST_RELEASE.md](NPM_FIRST_RELEASE.md). Future releases should use npm trusted publishing through GitHub Actions OIDC rather than introducing a long-lived npm write token.
+The bootstrap runbook and future-release procedure are in [NPM_FIRST_RELEASE.md](NPM_FIRST_RELEASE.md). On 2026-10-02, npm Trusted Publisher configuration was completed for both public packages against GitHub Actions workflow `npm-release.yml`. Future releases should therefore use OIDC rather than introducing a long-lived npm write token. The first OIDC publish should be exercised on the next legitimate package release rather than creating an artificial version solely to test the transport.
 
 Release credentials must stay in npm/GitHub secret or trusted-publishing
 facilities. Never commit npm tokens.
