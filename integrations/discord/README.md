@@ -344,3 +344,24 @@ Operator cleanup audit: **PASS**.
 - [x] temporary shell environment variables/secrets used by the harness were cleared
 
 The cleanup audit closes I5.6 without changing the accepted Discord payment contract, Payment Platform authority, or the client-side signing boundary.
+
+
+## Always-on production runtime
+
+The bounded Phase I E2E harness remains available for acceptance testing, but
+normal operation now uses `npm start` and remains online for repeated
+`/pepew-pay amount:<amount>` commands.
+
+The production runtime:
+
+- verifies every Discord interaction against the exact raw request body;
+- acknowledges the slash command before creating the payment;
+- posts an ordinary channel message with the PepewPay button;
+- intentionally allows only one outstanding payment at a time for the first low-volume production release;
+- persists only message-routing/restart state in a mode-0600 local JSON file;
+- receives a permanent signed Payment Platform webhook endpoint;
+- updates only on increasing `payment_version`;
+- keeps Payment Platform as the authoritative payment ledger.
+
+Deployment target and systemd/Apache configuration are documented in
+`../../deploy/edison2/README.md`.

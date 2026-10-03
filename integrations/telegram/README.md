@@ -288,3 +288,22 @@ the two roles isolated.
 
 If a complete bot token is ever disclosed outside trusted secret storage, revoke
 it in BotFather and replace it before continuing.
+
+
+## Always-on production runtime
+
+The bounded Phase I E2E harness remains available for acceptance testing, but
+normal operation now uses `npm start` and does not exit after one payment.
+
+The production runtime:
+
+- accepts private-chat `/pay <amount>`;
+- uses Telegram production Bot API long polling;
+- intentionally allows only one outstanding payment at a time for the first low-volume production release;
+- persists only message-routing/restart state in a mode-0600 local JSON file;
+- receives a permanent signed Payment Platform webhook endpoint;
+- applies only increasing `payment_version` updates;
+- keeps Payment Platform as the authoritative payment ledger.
+
+Deployment target and systemd/Apache configuration are documented in
+`../../deploy/edison2/README.md`.
