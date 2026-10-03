@@ -31,6 +31,7 @@ This increment is intentionally incomplete:
 
 - No fiat-to-PEPEW conversion exists. The order/store currency must be `PEPEW`.
 - Refunds, subscriptions, tokenization, and saved methods are not supported.
+- The current plugin uses one configured merchant receiving address. Payment Platform address-window exclusivity means overlapping checkout payment windows cannot share that address; a second concurrent order using the same configured address fails closed with `payment_address_in_use`. High-parallelism merchants need unique/fresh address allocation per order, which is not implemented in this plugin.
 
 Do not call this plugin production-ready yet. Packaging/install/upgrade/uninstall and deterministic runtime acceptance now pass, but one externally reachable staging/live paid Woo checkout remains the final gate.
 
