@@ -83,6 +83,17 @@ function findByMerchantReference(state, reference) {
   );
 }
 
+export function discordPaymentCreateFailureText(error) {
+  if (
+    error instanceof MerchantApiError &&
+    error.status === 409 &&
+    error.code === "payment_address_in_use"
+  ) {
+    return "This PEPEW address already has a payment request in its active time window. Use a different address or try again after that request expires.";
+  }
+  return "PEPEW payment request could not be created. Please try again.";
+}
+
 export async function runDiscordProductionRuntime(env = process.env) {
   const config = {
     publicKey: required(env.DISCORD_PUBLIC_KEY, "discord_public_key"),
@@ -153,12 +164,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
       console.log("discord_payment_created");
     } catch (error) {
       console.error(`discord_payment_create_failed code=${safeCode(error)}`);
-      const content =
-        error instanceof MerchantApiError &&
-        error.status === 409 &&
-        error.code === "payment_address_in_use"
-          ? "This PEPEW address already has a payment request in its active time window. Use a different address or try again after that request expires."
-          : "PEPEW payment request could not be created. Please try again.";
+      const content = discordPaymentCreateFailureText(error);
       try {
         await createDiscordChannelMessage({
           token: config.botToken,
