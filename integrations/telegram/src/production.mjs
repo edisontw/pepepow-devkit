@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import {
+  MerchantApiError,
   MerchantClient,
   WebhookVerificationError,
   verifyWebhook,
@@ -311,52 +312,62 @@ export async function runTelegramProductionRuntime(env = process.env) {
                 },
                 apiEnvironment: config.apiEnvironment,
               });
-            } else if (command.matched && pendingPaymentCount(state) > 0) {
-              await telegramApiCall({
-                token: config.token,
-                method: "sendMessage",
-                body: {
-                  chat_id: incoming.chatId,
-                  text: "A PEPEW payment is already in progress. Please try again after it is confirmed or expires.",
-                  link_preview_options: { is_disabled: true },
-                },
-                apiEnvironment: config.apiEnvironment,
-              });
             } else if (command.matched) {
-              const checkout = await createTelegramCheckout({
-                merchantClient,
-                receiveAddress: command.address,
-                amount: command.amount,
-                botId,
-                chatId: incoming.chatId,
-                messageId: incoming.messageId,
-                confirmations: config.confirmations,
-                expiresIn: config.expiresIn,
-                checkoutBaseUrl: config.checkoutBaseUrl,
-              });
-              const sent = await telegramApiCall({
-                token: config.token,
-                method: "sendMessage",
-                body: checkout.sendMessage,
-                apiEnvironment: config.apiEnvironment,
-              });
-              if (!Number.isInteger(sent?.message_id)) throw new Error("telegram_send_response_invalid");
-              const now = Math.floor(Date.now() / 1000);
-              state.payments[checkout.paymentId] = {
-                merchant_reference: checkout.merchantReference,
-                current_version: checkout.paymentVersion,
-                status: checkout.paymentStatus,
-                chat_id: incoming.chatId,
-                telegram_message_id: String(sent.message_id),
-                address: command.address,
-                amount: command.amount,
-                checkout_url: checkout.checkoutUrl,
-                created_at: now,
-                updated_at: now,
-                terminal_at: null,
-              };
-              await store.save(state);
-              console.log("telegram_payment_created");
+              try {
+                const checkout = await createTelegramCheckout({
+                  merchantClient,
+                  receiveAddress: command.address,
+                  amount: command.amount,
+                  botId,
+                  chatId: incoming.chatId,
+                  messageId: incoming.messageId,
+                  confirmations: config.confirmations,
+                  expiresIn: config.expiresIn,
+                  checkoutBaseUrl: config.checkoutBaseUrl,
+                });
+                const sent = await telegramApiCall({
+                  token: config.token,
+                  method: "sendMessage",
+                  body: checkout.sendMessage,
+                  apiEnvironment: config.apiEnvironment,
+                });
+                if (!Number.isInteger(sent?.message_id)) throw new Error("telegram_send_response_invalid");
+                const now = Math.floor(Date.now() / 1000);
+                state.payments[checkout.paymentId] = {
+                  merchant_reference: checkout.merchantReference,
+                  current_version: checkout.paymentVersion,
+                  status: checkout.paymentStatus,
+                  chat_id: incoming.chatId,
+                  telegram_message_id: String(sent.message_id),
+                  address: command.address,
+                  amount: command.amount,
+                  checkout_url: checkout.checkoutUrl,
+                  created_at: now,
+                  updated_at: now,
+                  terminal_at: null,
+                };
+                await store.save(state);
+                console.log("telegram_payment_created");
+              } catch (error) {
+                if (
+                  error instanceof MerchantApiError &&
+                  error.status === 409 &&
+                  error.code === "payment_address_in_use"
+                ) {
+                  await telegramApiCall({
+                    token: config.token,
+                    method: "sendMessage",
+                    body: {
+                      chat_id: incoming.chatId,
+                      text: "This PEPEW address already has a payment request in its active time window. Use a different address or try again after that request expires.",
+                      link_preview_options: { is_disabled: true },
+                    },
+                    apiEnvironment: config.apiEnvironment,
+                  });
+                } else {
+                  throw error;
+                }
+              }
             }
           }
           if (Number.isInteger(update?.update_id)) {
