@@ -112,7 +112,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
   store.prune(state);
   await store.save(state);
   const merchantClient = new MerchantClient({ apiKey: config.apiKey, apiOrigin: config.apiOrigin });
-  const inFlightReferences = new Set();
+  let paymentCreationInProgress = false;
 
   async function createPayment(command) {
     const reference = discordMerchantReference({
@@ -120,8 +120,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
       channelId: command.channelId,
       interactionId: command.interactionId,
     });
-    if (findByMerchantReference(state, reference) || inFlightReferences.has(reference)) return;
-    inFlightReferences.add(reference);
+    if (findByMerchantReference(state, reference)) return;
 
     try {
       const checkout = await createDiscordCheckout({
@@ -170,7 +169,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
         console.error(`discord_payment_failure_notice_failed code=${safeCode(notifyError)}`);
       }
     } finally {
-      inFlightReferences.delete(reference);
+      paymentCreationInProgress = false;
     }
   }
 
@@ -199,6 +198,18 @@ export async function runDiscordProductionRuntime(env = process.env) {
           return;
         }
         const command = extractDiscordPaymentCommand(interaction);
+        if (paymentCreationInProgress || pendingPaymentCount(state) > 0) {
+          json(res, 200, {
+            type: 4,
+            data: {
+              content: "A PEPEW payment is already in progress. Please try again after it is confirmed or expires.",
+              flags: 64,
+              allowed_mentions: { parse: [] },
+            },
+          });
+          return;
+        }
+        paymentCreationInProgress = true;
         json(res, 200, {
           type: 4,
           data: {
