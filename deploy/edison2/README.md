@@ -2,74 +2,95 @@
 
 Target:
 
-```text
+~~~text
 edison2
-152.67.253.217
 https://pepepow.net
-```
+~~~
 
-This host runs the low-volume Telegram and Discord merchant/payment adapters.
-Payment authority remains on `https://pay.pepepow.net`. edison2 stores only
-bot routing/restart state and the server-side credentials required by the
-adapters.
+This host runs the low-volume Telegram and Discord payment adapters. Payment authority remains on https://pay.pepepow.net.
 
-## Production status
-
-**Production accepted: 2026-10-03**
-
-The minimal edison2 rollout is live and accepted:
-
-- Telegram and Discord systemd services are active and enabled.
-- Runtime listeners remain localhost-only on `127.0.0.1:8790` and `127.0.0.1:8791`.
-- Apache exposes only the exact Telegram webhook, Discord interaction, and Discord webhook callback paths.
-- Telegram and Discord use separate scoped merchant credentials; the receiving address is supplied per user command.
-- Permanent Payment Platform webhook endpoints are registered under the matching scoped merchants.
-- Discord Developer Portal Interactions Endpoint points to the production HTTPS interaction callback.
-- A real 0.1 PEPEW Telegram payment reached confirmed and updated its bot message.
-- A real 0.1 PEPEW Discord payment reached confirmed and updated the same ordinary channel message.
-- Bot-token, merchant-credential, and webhook-signing-secret log checks passed.
-- Temporary cross-host credential-transfer files and the one-time SSH transfer key/authorization were removed after deployment.
-- `https://pepepow.net/` remained HTTP 200 after the Apache route change.
-
-This runbook remains the recovery/redeployment reference. Do not repeat merchant creation or webhook registration blindly on an already-live host; first inspect the existing scoped merchant, endpoint, env-file, and systemd state.
-
-For normal user commands and day-to-day service checks/restarts, see [../../docs/BOT_OPERATIONS.md](../../docs/BOT_OPERATIONS.md).
+Day-to-day checks are in ../../docs/BOT_OPERATIONS.md.
 
 ## Boundaries
 
-- Do not move Payment Platform SQLite, watcher, webhook worker, mnemonic,
-  private keys, or wallet signing to edison2.
-- Telegram and Discord use separate scoped merchant credentials; neither runtime has a fixed receiving address.
-- Bot tokens, merchant credentials, and webhook signing secrets stay in
-  `/etc/pepew-bots/*.env`; never put them in GitHub, chat, or logs.
-- Runtime listeners bind only to `127.0.0.1`.
-- Apache exposes only the three required HTTPS callback paths.
-- Local JSON files are message-routing/restart state, not payment authority.
-- The first production release intentionally permits one outstanding payment per
-  bot at a time. This remains a simple low-volume concurrency limit; it is no
-  longer tied to a shared receiving address.
+- Payment Platform SQLite, watcher, and webhook worker stay off edison2.
+- Wallet mnemonic/private keys/signing stay client-side.
+- Telegram and Discord use separate scoped merchant credentials.
+- The receiving address is supplied by each payment command; production runtime env files do not need PEPEW_RECEIVE_ADDRESS.
+- Bot listeners bind only to 127.0.0.1.
+- Apache exposes only the required HTTPS callback paths.
+- Local JSON state is routing/restart state, not payment authority.
+- One outstanding payment per bot is the initial low-volume concurrency limit.
 
-## 1. Preflight
+## Upgrade an existing installation
 
-```bash
+For an existing edison2 deployment:
+
+~~~bash
+cd /opt/pepepow-devkit
+sudo git pull --ff-only
+
+cd packages/pepewpay-merchant
+sudo npm install --no-audit --no-fund
+sudo npm run build
+
+cd ../../integrations/telegram
+sudo npm install --no-audit --no-fund
+sudo npm test
+
+cd ../discord
+sudo npm install --no-audit --no-fund
+sudo npm test
+~~~
+
+Remove the obsolete fixed receive-address setting if present:
+
+~~~bash
+sudo sed -i '/^PEPEW_RECEIVE_ADDRESS=/d'   /etc/pepew-bots/telegram.env   /etc/pepew-bots/discord.env
+~~~
+
+After the 33c29b9 command-contract change, re-register the Discord command:
+
+~~~bash
+cd /opt/pepepow-devkit/integrations/discord
+
+sudo -u pepew-bot bash -c '
+  set -a
+  . /etc/pepew-bots/discord.env
+  set +a
+  npm run setup:command
+'
+~~~
+
+Restart and verify:
+
+~~~bash
+sudo systemctl restart pepew-telegram-bot pepew-discord-bot
+curl -fsS http://127.0.0.1:8790/healthz
+curl -fsS http://127.0.0.1:8791/healthz
+~~~
+
+Existing scoped merchant credentials and permanent Payment Platform webhook endpoints do not need to be recreated for this upgrade.
+
+## Fresh installation
+
+### 1. Preflight
+
+~~~bash
 bash deploy/edison2/preflight.sh
-```
+~~~
 
 Required:
 
 - Node.js 20+
 - npm
-- Apache `proxy` and `proxy_http`
+- Apache proxy/proxy_http
 - localhost ports 8790 and 8791 free
-- current `pepepow.net` HTTPS site healthy
+- https://pepepow.net healthy
 
-Do not change the wallet node or existing website during preflight.
+### 2. Checkout and test
 
-## 2. Production checkout and dependencies
-
-Recommended checkout:
-
-```bash
+~~~bash
 sudo mkdir -p /opt
 cd /opt
 sudo git clone https://github.com/edisontw/pepepow-devkit.git
@@ -86,95 +107,73 @@ sudo npm test
 cd ../discord
 sudo npm install --no-audit --no-fund
 sudo npm test
-```
+~~~
 
-If `/opt/pepepow-devkit` already exists, use a clean `git pull` instead of
-cloning over it.
+### 3. Service account and env files
 
-## 3. Service user and protected configuration
-
-```bash
+~~~bash
 sudo useradd --system --home /nonexistent --shell /usr/sbin/nologin pepew-bot 2>/dev/null || true
 sudo install -d -o root -g pepew-bot -m 0750 /etc/pepew-bots
 sudo install -d -o pepew-bot -g pepew-bot -m 0700 /var/lib/pepew-bots
 
-sudo install -o root -g pepew-bot -m 0640 \
-  deploy/edison2/telegram.env.example /etc/pepew-bots/telegram.env
-sudo install -o root -g pepew-bot -m 0640 \
-  deploy/edison2/discord.env.example /etc/pepew-bots/discord.env
-```
+sudo install -o root -g pepew-bot -m 0640   deploy/edison2/telegram.env.example /etc/pepew-bots/telegram.env
 
-Edit the two files locally on edison2. Do not paste their secret values into
-ChatGPT or GitHub.
+sudo install -o root -g pepew-bot -m 0640   deploy/edison2/discord.env.example /etc/pepew-bots/discord.env
+~~~
 
-## 4. Create two scoped merchant credentials on VM-B
+Edit both env files locally. Do not expose secret values.
 
-On VM-B use the existing Phase K operator helper. Create one merchant/credential
-for Telegram and another for Discord:
+### 4. Scoped merchant credentials
 
-```bash
+On VM-B, create one merchant credential for each bot:
+
+~~~bash
 cd /home/ubuntu/pepepow-electrumx-service
 source backend/.venv/bin/activate
 
-python3 backend/scripts/merchant_credential_admin.py create-merchant \
-  --display-name "PEPEW Telegram Bot"
+python3 backend/scripts/merchant_credential_admin.py create-merchant   --display-name "PEPEW Telegram Bot"
 
-python3 backend/scripts/merchant_credential_admin.py create-credential \
-  --merchant-id mrc_<telegram-id> \
-  --label edison2-production \
-  --secret-file /secure/path/telegram-api-key.txt
+python3 backend/scripts/merchant_credential_admin.py create-credential   --merchant-id mrc_<telegram-id>   --label edison2-production   --secret-file /secure/path/telegram-api-key.txt
 
-python3 backend/scripts/merchant_credential_admin.py create-merchant \
-  --display-name "PEPEW Discord Bot"
+python3 backend/scripts/merchant_credential_admin.py create-merchant   --display-name "PEPEW Discord Bot"
 
-python3 backend/scripts/merchant_credential_admin.py create-credential \
-  --merchant-id mrc_<discord-id> \
-  --label edison2-production \
-  --secret-file /secure/path/discord-api-key.txt
-```
+python3 backend/scripts/merchant_credential_admin.py create-credential   --merchant-id mrc_<discord-id>   --label edison2-production   --secret-file /secure/path/discord-api-key.txt
+~~~
 
-The helper does not print generated Bearer secrets. Transfer each secret through
-an approved private path into the matching edison2 env file, then delete the
-temporary transfer copy. Never share one scoped credential between both bots. Receiving addresses come from individual user commands and are not stored in the runtime env file.
+Transfer each credential through a private path into the matching edison2 env file, then delete the temporary copy. Do not share one credential between both bots.
 
-## 5. Apache HTTPS callback routes
+### 5. Apache callbacks
 
-Enable the existing proxy modules if necessary:
+Enable proxy modules if needed:
 
-```bash
+~~~bash
 sudo a2enmod proxy proxy_http
-```
+~~~
 
-Place the rules from `deploy/edison2/apache-pepew-bots.conf` inside the
-existing `pepepow.net` HTTPS VirtualHost. Specific bot paths must appear before
-any broader catch-all proxy rule.
+Add deploy/edison2/apache-pepew-bots.conf rules to the existing pepepow.net HTTPS VirtualHost, then:
 
-```bash
+~~~bash
 sudo apache2ctl configtest
 sudo systemctl reload apache2
-```
+~~~
 
-Do not expose TCP 8790 or 8791 in the host/cloud firewall.
+Public callback paths:
 
-Public paths:
-
-```text
+~~~text
 https://pepepow.net/pepew-telegram/webhooks/pepew
 https://pepepow.net/pepew-discord/interactions
 https://pepepow.net/pepew-discord/webhooks/pepew
-```
+~~~
 
-Until the services start, Apache may return 503 on those narrow paths. That does
-not affect the rest of `pepepow.net`.
+Do not expose TCP 8790 or 8791 publicly.
 
-## 6. Register permanent Payment Platform webhook endpoints
+### 6. Permanent Payment Platform webhooks
 
-Register each endpoint once. The helper writes the one-time signing secret
-straight into a protected env file and never prints it.
+Register each endpoint once. The helper writes the one-time signing secret directly into a protected env file.
 
 Telegram:
 
-```bash
+~~~bash
 cd /opt/pepepow-devkit/integrations/telegram
 sudo bash -c '
   set -a
@@ -186,11 +185,11 @@ sudo bash -c '
   chown root:pepew-bot /etc/pepew-bots/telegram-webhook.env
   chmod 0640 /etc/pepew-bots/telegram-webhook.env
 '
-```
+~~~
 
 Discord:
 
-```bash
+~~~bash
 cd /opt/pepepow-devkit/integrations/discord
 sudo bash -c '
   set -a
@@ -202,110 +201,91 @@ sudo bash -c '
   chown root:pepew-bot /etc/pepew-bots/discord-webhook.env
   chmod 0640 /etc/pepew-bots/discord-webhook.env
 '
-```
+~~~
 
-The helpers refuse to overwrite an existing webhook env file. For future
-rotation, deliberately disable the old endpoint before creating a replacement.
+Do not overwrite an existing webhook env file. Rotate deliberately by disabling the old endpoint before creating a replacement.
 
-## 7. Install and start systemd services
+### 7. Install services
 
-```bash
+~~~bash
 cd /opt/pepepow-devkit
 
-sudo install -o root -g root -m 0644 \
-  deploy/edison2/pepew-telegram-bot.service \
-  /etc/systemd/system/pepew-telegram-bot.service
-sudo install -o root -g root -m 0644 \
-  deploy/edison2/pepew-discord-bot.service \
-  /etc/systemd/system/pepew-discord-bot.service
+sudo install -o root -g root -m 0644   deploy/edison2/pepew-telegram-bot.service   /etc/systemd/system/pepew-telegram-bot.service
+
+sudo install -o root -g root -m 0644   deploy/edison2/pepew-discord-bot.service   /etc/systemd/system/pepew-discord-bot.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable pepew-telegram-bot pepew-discord-bot
 sudo systemctl restart pepew-telegram-bot pepew-discord-bot
-```
+~~~
 
-Verify without dumping environment variables:
+Verify:
 
-```bash
-sudo systemctl status pepew-telegram-bot --no-pager
-sudo systemctl status pepew-discord-bot --no-pager
+~~~bash
+systemctl is-active pepew-telegram-bot pepew-discord-bot
 curl -fsS http://127.0.0.1:8790/healthz
 curl -fsS http://127.0.0.1:8791/healthz
-```
+sudo ss -ltnp | grep -E '127\.0\.0\.1:(8790|8791)\b'
+~~~
 
-## 8. Discord application
+### 8. Discord application
 
-Set the Discord Developer Portal Interactions Endpoint URL to:
+Set the Interactions Endpoint URL to:
 
-```text
+~~~text
 https://pepepow.net/pepew-discord/interactions
-```
+~~~
 
 Register/update the guild command:
 
-```bash
+~~~bash
 cd /opt/pepepow-devkit/integrations/discord
+
 sudo -u pepew-bot bash -c '
   set -a
   . /etc/pepew-bots/discord.env
   set +a
   npm run setup:command
 '
-```
+~~~
 
-Expected command:
+Current command:
 
-```text
-/pepew-pay address:<PEPEW-address> amount:10
-```
+~~~text
+/pepew-pay address:<PEPEW-address> amount:<amount>
+~~~
 
-## 9. Telegram bot
+### 9. Telegram bot
 
-The production Telegram service uses long polling. The dedicated payment bot
-must therefore have no Telegram webhook configured.
+The production bot uses long polling and must not have a Telegram Bot API webhook configured.
 
-Supported private-chat command:
+Current private-chat command:
 
-```text
-/pay <PEPEW-address> 10
-```
+~~~text
+/pay <PEPEW-address> <amount>
+~~~
 
-The response contains a real PepewPay button. Payment status updates come only
-from verified Payment Platform webhooks.
+## Small-value acceptance
 
-## 10. Small-value live acceptance
+Use a small amount and a valid receiving address.
 
-Use a small amount such as 0.1 PEPEW and pay from an address different from the
-merchant receiving address.
+Expected flow for both adapters:
 
-Telegram:
-
-```text
-/pay <PEPEW-address> 0.1
--> PepewPay button
--> integrated wallet payment
--> detected / waiting for confirmations
--> confirmed
-```
-
-Discord:
-
-```text
-/pepew-pay address:<PEPEW-address> amount:0.1
--> ordinary channel payment message + PepewPay button
--> integrated wallet payment
--> same message updates to pending
--> same message updates to confirmed
-```
+~~~text
+command
+  -> PepewPay button
+  -> client-side wallet payment
+  -> detected / waiting for confirmations
+  -> confirmed message update
+~~~
 
 Final checks:
 
-```bash
-sudo systemctl is-active pepew-telegram-bot pepew-discord-bot apache2
-ss -ltnp | grep -E '127\.0\.0\.1:(8790|8791)'
+~~~bash
+systemctl is-active pepew-telegram-bot pepew-discord-bot apache2
+curl -fsSI https://pepepow.net/ | head
 sudo journalctl -u pepew-telegram-bot -n 50 --no-pager
 sudo journalctl -u pepew-discord-bot -n 50 --no-pager
-```
+~~~
 
-Logs must not contain bot tokens, merchant credentials, webhook signing
-secrets, mnemonic phrases, private keys, or raw wallet signing material.
+Logs must not contain bot tokens, merchant credentials, webhook signing secrets, mnemonic phrases, private keys, or signing material.
