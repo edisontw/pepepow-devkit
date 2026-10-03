@@ -112,6 +112,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
   store.prune(state);
   await store.save(state);
   const merchantClient = new MerchantClient({ apiKey: config.apiKey, apiOrigin: config.apiOrigin });
+  const inFlightReferences = new Set();
 
   async function createPayment(command) {
     const reference = discordMerchantReference({
@@ -119,7 +120,8 @@ export async function runDiscordProductionRuntime(env = process.env) {
       channelId: command.channelId,
       interactionId: command.interactionId,
     });
-    if (findByMerchantReference(state, reference)) return;
+    if (findByMerchantReference(state, reference) || inFlightReferences.has(reference)) return;
+    inFlightReferences.add(reference);
 
     try {
       const checkout = await createDiscordCheckout({
@@ -167,6 +169,8 @@ export async function runDiscordProductionRuntime(env = process.env) {
       } catch (notifyError) {
         console.error(`discord_payment_failure_notice_failed code=${safeCode(notifyError)}`);
       }
+    } finally {
+      inFlightReferences.delete(reference);
     }
   }
 
