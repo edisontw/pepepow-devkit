@@ -22,7 +22,7 @@ Day-to-day checks are in ../../docs/BOT_OPERATIONS.md.
 - Bot listeners bind only to 127.0.0.1.
 - Apache exposes only the required HTTPS callback paths.
 - Local JSON state is routing/restart state, not payment authority.
-- One outstanding payment per bot is the initial low-volume concurrency limit.
+- The bot runtimes may keep multiple outstanding payments when different receiving addresses are used. Same-address overlapping payment windows are rejected by the Payment Platform.
 
 ## Upgrade an existing installation
 
@@ -270,7 +270,7 @@ Private-chat, group, and supergroup command:
 /pay <PEPEW-address> <amount>
 ~~~
 
-The explicit `/pay@BotName ...` form is also accepted when it targets this bot. The initial group-capable release still permits only one outstanding Telegram payment globally across all chats.
+The explicit `/pay@BotName ...` form is also accepted when it targets this bot. After the address-window concurrency rollout, separate chats may have concurrent payments when they use different receiving addresses; a reused address remains reserved until its previous payment window expires.
 
 ## Small-value acceptance
 

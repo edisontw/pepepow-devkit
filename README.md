@@ -92,7 +92,7 @@ Discord
 
 The receiving address is supplied with each request. The always-on bot runtimes do not use a fixed PEPEW_RECEIVE_ADDRESS.
 
-Current low-volume policy permits one outstanding payment globally per bot at a time, including across Telegram private/group chats. This is a concurrency limit, not an address-allocation requirement.
+Bot runtimes may keep multiple outstanding payments concurrently when they use different receiving addresses. The Payment Platform rejects overlapping payment time windows for the same receiving address with HTTP `409 payment_address_in_use`; this protection is global across merchants/integrations.
 
 Production runtime/deployment:
 
@@ -164,6 +164,7 @@ As of 2026-10-03:
 - multi-merchant scoped credentials are supported without changing the merchant SDK Bearer transport.
 - Telegram/Discord always-on production runtimes use a user-supplied receiving address per payment command; the corrected contract was deployed and real Telegram/Discord payments passed on 2026-10-03.
 - Telegram private/group/supergroup `/pay` support is deployed on edison2; live group payment acceptance passed on 2026-10-03.
+- Concurrent bot payments for different receiving addresses are implemented in source. Same-address overlapping payment windows are rejected authoritatively by the Payment Platform; production rollout/acceptance of this concurrency change is still pending.
 
 Detailed phase history and production architecture are maintained in edisontw/pepepow-electrumx-service/docs/PAYMENT_PLATFORM_ROADMAP.md.
 

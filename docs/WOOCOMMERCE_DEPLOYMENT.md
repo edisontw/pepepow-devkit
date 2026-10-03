@@ -33,6 +33,8 @@ Configure server-side only:
 - PepewPay checkout base URL
 - merchant API key
 - merchant PEPEW receiving address
+
+The current plugin uses one configured receiving address. The Payment Platform does not allow overlapping payment windows for the same address, so this adapter is intentionally single-window for that configured address. A concurrent checkout on the same address fails closed rather than risking one transaction output being attributed to two orders. Unique/fresh per-order address allocation is a future merchant-scaling feature.
 - webhook signing secret
 - required confirmations
 - payment expiry
