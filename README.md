@@ -28,6 +28,7 @@ integrations/
 
 test-vectors/
   payment-uri-v1.json
+  merchant-namespaces-v1.json
 ```
 
 Primary development sequence completed through Phase I:
@@ -40,10 +41,10 @@ pepew-js
   -> merchant onboarding / distribution
 ```
 
-Current cross-repository priority is Phase K in the server repository:
-multi-merchant credential and ownership isolation. DevKit transport remains
-Bearer-compatible; onboarding docs will be expanded after the scoped server
-credential model is production-validated.
+Phase K multi-merchant credential and ownership isolation is production-validated
+through K5 in the server repository. DevKit K6 aligns onboarding/testing with
+the scoped model. The SDK transport remains unchanged:
+`Authorization: Bearer <credential>`.
 
 The server-side Payment/Event Gateway and webhook infrastructure belong in `edisontw/pepepow-electrumx-service`.
 
@@ -174,7 +175,7 @@ Before substantial work, read the latest roadmap and relevant repo documentation
 
 ## Current status
 
-As of 2026-10-02:
+As of 2026-10-03:
 
 - repository initialized
 - Phase A protocol foundation is complete
@@ -200,3 +201,25 @@ As of 2026-10-02:
 - Phase I I5.5 Telegram merchant/payment adapter is complete, including normal production Bot API transport and real 0.1 PEPEW payment/webhook/message-update E2E on 2026-09-30
 - Phase I I5.6 Discord merchant/payment adapter is complete: dedicated HTTP interaction transport plus a real 0.1 PEPEW Payment Platform/webhook E2E reached `paid_unconfirmed` -> `paid_confirmed`, updated the same ordinary Discord bot message, and the temporary runtime/infrastructure cleanup audit was operator-confirmed PASS on 2026-10-01
 - Phase I is CLOSED as of 2026-10-02: I1 distribution, I2 sample app, I3 production guide, I4 testing strategy, and I5 WooCommerce/Telegram/Discord integrations all satisfy their exit criteria
+
+
+## Phase K DevKit alignment
+
+Phase K K5 is complete in the server repository: explicit merchant ownership,
+scoped/revocable credentials, merchant-scoped idempotency/reference recovery,
+webhook ownership isolation, production migration, and Phase K H2/J1 recovery
+have all been production-validated.
+
+DevKit K6 keeps the existing `@pepepow/pepewpay-merchant` API compatible:
+
+- each independent merchant receives its own operator-issued scoped credential;
+- the SDK still sends that value as `Authorization: Bearer <credential>`;
+- the same `merchant_reference` and `Idempotency-Key` may be reused by
+  different merchants because the server scopes them by authenticated merchant;
+- a merchant can recover/list/manage only its own private payment/webhook
+  namespace;
+- public payment capability URLs remain unchanged;
+- merchant dashboard/self-service signup/provisioning remains deferred.
+
+Deterministic two-merchant namespace coverage is in
+`test-vectors/merchant-namespaces-v1.json` and the merchant SDK contract tests.

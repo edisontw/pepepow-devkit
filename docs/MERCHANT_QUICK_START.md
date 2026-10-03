@@ -1,6 +1,6 @@
 # PEPEW Merchant Quick Start
 
-Last updated: 2026-10-02
+Last updated: 2026-10-03
 
 This is the shortest supported path from merchant credentials to a production-shaped PEPEW checkout.
 It assumes the authoritative Payment Platform is `https://pay.pepepow.net`.
@@ -23,14 +23,19 @@ Never send a mnemonic, private key, merchant API key, or webhook signing secret 
 
 Current production credential scope:
 
-- Payment API v1 still uses one single-merchant Bearer namespace;
-- do **not** distribute the same production merchant API key to multiple
-  independent merchants;
-- Phase K in the canonical server roadmap is adding explicit merchant ownership
-  and scoped/revocable credentials before multi-merchant production onboarding.
+- each independent merchant uses its own operator-issued scoped/revocable
+  credential;
+- do **not** share one credential between independent merchants;
+- the Payment Platform resolves the Bearer credential to a merchant ownership
+  context for payment recovery, idempotency/reference namespaces, webhook
+  endpoints, and delivery logs;
+- the legacy environment credential remains only as a bounded compatibility
+  path for existing legacy merchant consumers and must not be distributed as a
+  general multi-merchant credential.
 
-This does not change the SDK header contract; the merchant backend still sends
-`Authorization: Bearer <credential>`.
+The SDK/header contract is unchanged: the merchant backend sends
+`Authorization: Bearer <credential>`. No merchant ID needs to be placed in
+customer-visible URLs or request bodies.
 
 ## 2. Install
 
@@ -55,7 +60,7 @@ The runnable sample requires Node.js 22+. The merchant SDK itself remains Node.j
 Set in `.env`:
 
 ```text
-PEPEW_MERCHANT_API_KEY=<operator-issued merchant API key>
+PEPEW_MERCHANT_API_KEY=<operator-issued scoped merchant credential>
 PEPEW_RECEIVE_ADDRESS=<merchant PEPEW receiving address>
 PEPEW_PAYMENT_API_ORIGIN=https://pay.pepepow.net
 PEPEW_CHECKOUT_BASE_URL=https://pay.pepepow.net/
@@ -63,8 +68,7 @@ PEPEW_CONFIRMATIONS=3
 PEPEW_EXPIRES_IN=900
 ```
 
-Use a unique merchant order ID as `merchant_reference` and persist a stable `Idempotency-Key` before the remote create call.
-Do not generate a new retry identity just because an HTTP response was lost.
+Use a merchant-order ID that is unique within your own merchant namespace as `merchant_reference` and persist a stable `Idempotency-Key` before the remote create call. Another merchant may independently use the same reference/key values without collision. Do not generate a new retry identity just because an HTTP response was lost.
 
 ## 4. Register webhook endpoint
 
@@ -83,7 +87,7 @@ Then run:
 npm run webhook:register
 ```
 
-The registration helper reads the merchant API key from the environment and does not put it in command-line arguments.
+The registration helper reads the scoped merchant credential from the environment and does not put it in command-line arguments. The created webhook endpoint belongs to that authenticated merchant namespace.
 It writes the one-time endpoint `signing_secret` to `./data/webhook-registration.json` with restrictive permissions where supported and does not print the secret.
 
 Move that secret into server-side secret storage as `PEPEW_WEBHOOK_SIGNING_SECRET`, then delete the registration file.
@@ -155,13 +159,14 @@ Do not automatically ship goods merely because a webhook was received.
 
 ## 10. Production checklist
 
-- merchant API key and webhook secret are server-side only
+- scoped merchant credential and webhook secret are server-side only
+- each independent merchant has its own credential; credentials are never shared across merchants
 - `.env`, SQLite state, and one-time registration files are excluded from Git
 - HTTPS termination and normal merchant authentication protect order-creation routes
 - public webhook route preserves exact raw body bytes
 - event processing is durably idempotent by `event_id`
 - state ordering uses `payment_version`, not status ranking
-- create uses stable `Idempotency-Key` plus unique `merchant_reference`
+- create uses stable `Idempotency-Key` plus a merchant-reference unique within that merchant's namespace
 - capability checkout URLs are not retained in verbose logs longer than needed
 - labels/messages/references contain no passwords, tokens, medical records, or other sensitive data
 - merchant database has its own backup/recovery policy
@@ -174,3 +179,29 @@ Do not automatically ship goods merely because a webhook was received.
 Payment API authority remains transaction-level and is not changed by an SDK package version.
 
 Canonical server contracts remain in `pepepow-electrumx-service/docs/PAYMENT_API_V1.md`, `PAYMENT_API_AUTH.md`, and `WEBHOOKS.md`.
+
+
+## 12. Credential lifecycle and provisioning
+
+Initial production credential provisioning remains operator-managed. There is
+no public signup/dashboard/self-service credential endpoint yet.
+
+For each merchant:
+
+1. the operator creates or selects the merchant identity;
+2. the operator issues a high-entropy scoped credential;
+3. the secret is delivered once through an approved secret channel;
+4. the merchant stores it only on its backend;
+5. normal rotation may temporarily overlap old/new credentials;
+6. the old credential is explicitly disabled after cutover.
+
+The Payment Platform stores only credential hash/metadata, not recoverable
+plaintext credentials. If a credential is suspected to be exposed, ask the
+operator to revoke its credential ID and issue a replacement.
+
+A credential rotation does not require changing
+`@pepepow/pepewpay-merchant` code: replace the backend secret value while
+keeping the same Bearer transport.
+
+The canonical server-side credential operations runbook is maintained in
+`pepepow-electrumx-service/docs/PHASE_K_CREDENTIAL_OPERATIONS.md`.

@@ -1,6 +1,6 @@
 # PEPEW Merchant Testing and Sandbox Strategy
 
-Last updated: 2026-09-26
+Last updated: 2026-10-03
 
 This is the Phase I I4 developer test strategy. It makes merchant integration repeatable without weakening production webhook/network controls or adding always-on infrastructure before it is needed.
 
@@ -23,7 +23,15 @@ Implementation:
 ```text
 examples/merchant-app/test-support/mock-payment-platform.mjs
 examples/merchant-app/tests/contract-harness.test.mjs
+test-vectors/merchant-namespaces-v1.json
+packages/pepewpay-merchant/tests/multi-merchant.test.mjs
 ```
+
+The Phase K fixture deliberately gives two test merchants the same
+`merchant_reference` and `Idempotency-Key`. The contract test requires
+distinct payment identities and authenticated recovery limited to each
+credential's own namespace. Test credential values are synthetic and are not
+production secrets.
 
 Run:
 
@@ -41,7 +49,7 @@ Use only when an authorized operator deliberately wants to confirm compatibility
 The live smoke:
 
 - is never run by CI
-- requires an API key and real receiving address at runtime
+- requires an authorized scoped merchant credential and real receiving address at runtime
 - requires a unique `SMOKE-*` merchant reference
 - requires the explicit guard `CREATE_ONE_EXPIRING_PAYMENT`
 - creates at most one five-minute payment intent per invocation
@@ -56,7 +64,7 @@ Required environment:
 PEPEW_LIVE_SMOKE_CONFIRM=CREATE_ONE_EXPIRING_PAYMENT
 PEPEW_LIVE_SMOKE_REFERENCE=SMOKE-<unique-id>
 PEPEW_LIVE_SMOKE_AMOUNT=<small positive amount>
-PEPEW_MERCHANT_API_KEY=<authorized key>
+PEPEW_MERCHANT_API_KEY=<authorized scoped merchant credential>
 PEPEW_RECEIVE_ADDRESS=<merchant address>
 ```
 
@@ -98,18 +106,25 @@ Production endpoint validation remains HTTPS-only, public-network-only, port 443
 
 ## 3. Credential and data isolation
 
-Payment API v1 currently uses the existing single-merchant Bearer boundary. There is no general-purpose public sandbox credential or multi-tenant developer credential model yet.
+Phase K production now has explicit merchant ownership and scoped/revocable
+Bearer credentials. This is a production isolation model, not a public sandbox
+or self-service developer account system.
 
 Therefore:
 
-- external/untrusted developers use Layer A, not production credentials
-- CI never receives the production merchant API key or webhook secret
-- live smoke credentials stay only in authorized operator/server secret storage
-- test references use a recognizable `SMOKE-` prefix
-- test payloads contain no customer personal data
-- local SQLite test state uses temporary paths and is removed after tests
+- independent merchants receive distinct operator-issued credentials;
+- authenticated payment listing/recovery, idempotency/reference identity,
+  webhook endpoints, and delivery logs are merchant scoped;
+- external/untrusted developers still use Layer A unless an operator has
+  intentionally provisioned a production merchant for them;
+- CI never receives any production merchant credential or webhook secret;
+- live smoke credentials stay only in authorized operator/server secret storage;
+- test references use a recognizable `SMOKE-` prefix;
+- test payloads contain no customer personal data;
+- local SQLite test state uses temporary paths and is removed after tests.
 
-A future public sandbox must not reuse the production merchant credential.
+A future public sandbox must use separate sandbox credentials and must never
+reuse a production merchant credential.
 
 ## 4. When to add a dedicated sandbox
 
@@ -117,12 +132,12 @@ Do not create another always-on Payment Platform host yet.
 
 A dedicated sandbox becomes justified when real demand appears, for example:
 
-- multiple external merchants need credentials concurrently
+- external developers need self-service/test-only credentials without production merchant provisioning
 - WooCommerce/plugin CI needs repeatable network-level API access
 - manual live-smoke rows become operational noise
 - public webhook callback testing becomes frequent
 - a stable PEPEW test-network/funding path is available for automated paid E2E
-- production single-merchant credentials no longer provide adequate isolation
+- production rows from repeated manual live-smoke activity become operationally noisy despite merchant isolation
 
 Before deployment, define sandbox credential scope/rotation, separate database and webhook master key, retention/reset policy, rate limits, test funding, TLS/domain, resource budget, and a prohibition on real customer data.
 
@@ -130,6 +145,6 @@ Never point sandbox writers at the production SQLite database.
 
 ## 5. Current decision
 
-Phase I uses Layer A as the normal developer experience, Layer B as operator-only compatibility smoke, and Layer C as deliberate release/production acceptance.
+Phase K keeps Layer A as the normal developer experience, Layer B as an operator-authorized per-merchant compatibility smoke, and Layer C as deliberate release/production acceptance. Production multi-merchant isolation is validated, but public self-service sandbox provisioning remains out of scope.
 
 No dedicated always-on sandbox infrastructure is required yet.

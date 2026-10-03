@@ -36,17 +36,42 @@ npm install
 npm test
 ```
 
-The package is MIT-licensed and configured for eventual public npm
-distribution under the existing package name. Publishing remains an explicit
-release action; normal pushes to `main` do not publish npm packages.
-
-The remaining external gate is confirming npm `@pepepow` scope ownership and
-publisher configuration. CI already builds, packs, installs, and imports the
-tarball in a clean Node consumer.
+The package is MIT-licensed and publicly released as
+`@pepepow/pepewpay-merchant@0.1.0`. Publishing remains an explicit tagged
+release action; normal pushes to `main` do not publish npm packages. Future
+releases are prepared for npm Trusted Publisher / GitHub Actions OIDC.
 
 See `../../docs/SDK_DISTRIBUTION.md` for the versioning and release contract.
 
 For an end-to-end production-shaped integration path, see `../../docs/MERCHANT_QUICK_START.md`.
+
+## Phase K scoped merchant credentials
+
+Production Payment API v1 now resolves each operator-issued Bearer credential
+to a merchant namespace. The SDK API does not change: pass that scoped secret
+through the existing `apiKey` option and the client sends
+`Authorization: Bearer <credential>`.
+
+Do not pass a merchant ID separately and do not share one credential between
+independent merchants.
+
+Server ownership means:
+
+- `merchant_reference` uniqueness is scoped to the authenticated merchant;
+- `Idempotency-Key` replay/conflict identity is scoped to the authenticated
+  merchant;
+- exact-reference recovery/listing returns only that merchant's payments;
+- webhook endpoint/delivery management is merchant scoped;
+- public payment capability URLs remain unchanged.
+
+Two merchants may therefore use the same reference and idempotency-key strings
+and still receive independent payments. Deterministic coverage is in
+`../../test-vectors/merchant-namespaces-v1.json` and
+`tests/multi-merchant.test.mjs`.
+
+Credential provisioning/rotation is currently operator-managed. A public
+merchant dashboard or self-service credential API is intentionally not part of
+the SDK contract.
 
 ## Create payment
 
@@ -89,7 +114,7 @@ await orders.bindPayment(orderId, {
 const checkoutUrl = buildCheckoutUrl(payment.payment_id);
 ```
 
-The merchant API key stays on the merchant backend. Do not place it in
+The scoped merchant credential stays on the merchant backend. Do not place it in
 PepewPay URLs, browser JavaScript, Payment URIs, QR codes, logs, or wallet
 handoffs.
 

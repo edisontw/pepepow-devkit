@@ -22,7 +22,7 @@ The sample does not hold wallet private keys and does not sign transactions.
 
 - Node.js 22 or newer
 - npm
-- a merchant API key
+- an operator-issued scoped merchant credential
 - a webhook endpoint signing secret returned when the endpoint is created
 - a PEPEW receiving address
 
@@ -97,7 +97,7 @@ The response contains the intended customer capability:
 }
 ```
 
-The merchant API key is never returned.
+The scoped merchant credential is never returned.
 
 If payment creation loses its HTTP response, the application first tries exact
 `merchant_reference` recovery. If recovery is still uncertain, the order
@@ -161,7 +161,8 @@ Before using this pattern in a real merchant application:
 - integrate order creation behind the merchant's own authentication/cart logic
 - terminate HTTPS at the normal web tier
 - expose only the webhook path that must receive Payment Platform deliveries
-- keep API keys and webhook secrets in server-side secret storage
+- keep the scoped merchant credential and webhook secret in server-side secret storage
+- never reuse one scoped credential across independent merchants
 - keep durable event deduplication and order updates in one database transaction
 - decide fulfillment policy explicitly; this sample stores payment state but
   does not auto-ship goods
@@ -178,3 +179,22 @@ See `../../docs/MERCHANT_QUICK_START.md` for credentials, registration, recovery
 Default development/CI uses a deterministic in-process Payment API + signed webhook contract harness with no network or production credentials. See `../../docs/TESTING_AND_SANDBOX.md`.
 
 An operator-only bounded live smoke is available through `npm run smoke:live`, but it is guarded, never runs in CI, and creates one short-lived live payment intent without sending funds.
+
+
+## Multi-merchant namespace behavior
+
+The sample needs no code change for Phase K. Configure
+`PEPEW_MERCHANT_API_KEY` with the scoped credential issued for this merchant.
+
+A different merchant may use the same local order/reference strings and the
+same retry-key format because the Payment Platform scopes
+`merchant_reference` and `Idempotency-Key` to the authenticated merchant.
+Recovery through this sample's credential cannot return another merchant's
+private payment namespace.
+
+The public checkout capability remains only
+`https://pay.pepepow.net/?payment_id=...`; it does not carry a merchant ID or
+merchant credential.
+
+See `../../test-vectors/merchant-namespaces-v1.json` for the deterministic
+two-merchant contract fixture.
