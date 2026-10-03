@@ -13,3 +13,6 @@ coverage/
 *.sqlite3-shm
 examples/merchant-app/data/
 webhook-registration.json
+
+# Local bot runtime routing state
+integrations/*/data/
