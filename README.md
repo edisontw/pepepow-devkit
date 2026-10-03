@@ -164,7 +164,7 @@ As of 2026-10-03:
 - multi-merchant scoped credentials are supported without changing the merchant SDK Bearer transport.
 - Telegram/Discord always-on production runtimes use a user-supplied receiving address per payment command; the corrected contract was deployed and real Telegram/Discord payments passed on 2026-10-03.
 - Telegram private/group/supergroup `/pay` support is deployed on edison2; live group payment acceptance passed on 2026-10-03.
-- Concurrent bot payments for different receiving addresses are implemented in source. Same-address overlapping payment windows are rejected authoritatively by the Payment Platform; production rollout/acceptance of this concurrency change is still pending.
+- Concurrent bot payments for different receiving addresses are deployed and production-accepted. On 2026-10-04, Telegram held two simultaneous outstanding payments on different addresses (`pending_payments=2`), Telegram rejected reuse of an active address, and Discord also rejected reuse of that Telegram-reserved address, confirming authoritative cross-bot protection on the Payment Platform.
 
 Detailed phase history and production architecture are maintained in edisontw/pepepow-electrumx-service/docs/PAYMENT_PLATFORM_ROADMAP.md.
 
