@@ -83,7 +83,7 @@ The Payment Platform remains authoritative for payment state. Integrations must 
 Current command contract:
 
 ~~~text
-Telegram
+Telegram private / group / supergroup
 /pay <PEPEW-address> <amount>
 
 Discord
@@ -92,7 +92,7 @@ Discord
 
 The receiving address is supplied with each request. The always-on bot runtimes do not use a fixed PEPEW_RECEIVE_ADDRESS.
 
-Current low-volume policy permits one outstanding payment per bot at a time. This is a concurrency limit, not an address-allocation requirement.
+Current low-volume policy permits one outstanding payment globally per bot at a time, including across Telegram private/group chats. This is a concurrency limit, not an address-allocation requirement.
 
 Production runtime/deployment:
 

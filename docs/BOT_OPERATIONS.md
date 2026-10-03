@@ -8,7 +8,7 @@ Use this document for normal bot operation. Installation, upgrade, and recovery 
 
 ## User commands
 
-Telegram private chat:
+Telegram private chat, group, or supergroup:
 
 ~~~text
 /pay <PEPEW-address> <amount>
@@ -19,6 +19,8 @@ Example:
 ~~~text
 /pay PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb 0.1
 ~~~
+
+The explicit `/pay@BotName ...` form is also accepted when it targets this bot. A command explicitly addressed to another bot is ignored. In a group, the payment address, amount, PepewPay button, and Payment Platform-driven status are visible to the group.
 
 Discord:
 
@@ -48,10 +50,10 @@ command
 ## Current limits
 
 - amount must be positive with at most 8 decimal places;
-- one outstanding payment is allowed per bot;
+- one outstanding payment is allowed globally per bot, across all Telegram chats;
 - default expiry is 900 seconds;
 - production confirmation policy is currently 1 confirmation;
-- Telegram accepts private-chat payment commands only;
+- Telegram accepts `private`, `group`, and `supergroup` payment commands;
 - Discord uses HTTP Interactions and may appear offline.
 
 The one-payment limit is a low-volume concurrency policy and is independent of the receiving address.

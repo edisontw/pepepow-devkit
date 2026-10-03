@@ -261,11 +261,13 @@ Current command:
 
 The production bot uses long polling and must not have a Telegram Bot API webhook configured.
 
-Current private-chat command:
+Private-chat, group, and supergroup command:
 
 ~~~text
 /pay <PEPEW-address> <amount>
 ~~~
+
+The explicit `/pay@BotName ...` form is also accepted when it targets this bot. The initial group-capable release still permits only one outstanding Telegram payment globally across all chats.
 
 ## Small-value acceptance
 

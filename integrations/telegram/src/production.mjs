@@ -42,13 +42,43 @@ function normalizeAmount(value) {
   return text;
 }
 
-export function parseTelegramPayCommand(text) {
-  const input = String(text ?? "").trim();
-  const match = /^\/(?:pay|pepew-pay)(?:@[A-Za-z0-9_]+)?(?:\s+(.+))?$/i.exec(input);
-  if (!match) return { matched: false };
-  if (!match[1]) return { matched: true, error: "usage" };
+const TELEGRAM_CHAT_TYPES = new Set(["private", "group", "supergroup"]);
+const BOT_USERNAME_RE = /^[A-Za-z0-9_]{1,64}$/;
 
-  const parts = match[1].trim().split(/\s+/);
+function normalizeBotUsername(value) {
+  const username = String(value ?? "").trim().replace(/^@/, "");
+  if (!BOT_USERNAME_RE.test(username)) throw new Error("telegram_bot_username_invalid");
+  return username;
+}
+
+export function parseTelegramPayCommand(
+  text,
+  { chatType = "private", botUsername } = {},
+) {
+  const input = String(text ?? "").trim();
+  const match = /^\/(pay|pepew-pay)(?:@([A-Za-z0-9_]+))?(?:\s+(.+))?$/i.exec(input);
+  if (!match) return { matched: false };
+
+  const normalizedChatType = String(chatType ?? "").trim().toLowerCase();
+  if (!TELEGRAM_CHAT_TYPES.has(normalizedChatType)) return { matched: false };
+
+  const targetUsername = match[2] ?? null;
+  const normalizedBotUsername =
+    botUsername == null || botUsername === "" ? null : normalizeBotUsername(botUsername);
+
+  if (
+    targetUsername &&
+    (
+      !normalizedBotUsername ||
+      targetUsername.toLowerCase() !== normalizedBotUsername.toLowerCase()
+    )
+  ) {
+    return { matched: false };
+  }
+
+  if (!match[3]) return { matched: true, error: "usage" };
+
+  const parts = match[3].trim().split(/\s+/);
   if (parts.length !== 2) return { matched: true, error: "usage" };
 
   const [address, amount] = parts;
@@ -63,14 +93,15 @@ export function parseTelegramPayCommand(text) {
   }
 }
 
-function privateMessage(update) {
+export function telegramMessageFromUpdate(update) {
   const message = update?.message;
-  if (!message || message.chat?.type !== "private") return null;
+  const chatType = String(message?.chat?.type ?? "").trim().toLowerCase();
+  if (!message || !TELEGRAM_CHAT_TYPES.has(chatType)) return null;
   const chatId = String(message.chat.id ?? "");
   const messageId = String(message.message_id ?? "");
   if (!/^-?(?:0|[1-9][0-9]{0,23})$/.test(chatId)) return null;
   if (!/^(?:0|[1-9][0-9]{0,15})$/.test(messageId)) return null;
-  return { chatId, messageId, text: String(message.text ?? "") };
+  return { chatId, messageId, chatType, text: String(message.text ?? "") };
 }
 
 async function readRawBody(req) {
@@ -153,6 +184,7 @@ export async function runTelegramProductionRuntime(env = process.env) {
   });
   if (!Number.isInteger(bot?.id)) throw new Error("telegram_bot_identity_invalid");
   const botId = String(bot.id);
+  const botUsername = normalizeBotUsername(bot.username);
 
   const server = createServer(async (req, res) => {
     const requestUrl = new URL(req.url ?? "/", "http://localhost");
@@ -196,6 +228,7 @@ export async function runTelegramProductionRuntime(env = process.env) {
       const edit = buildTelegramStatusEdit({
         chatId: record.chat_id,
         messageId: record.telegram_message_id,
+        address: record.address,
         amount: record.amount,
         checkoutUrl: record.checkout_url,
         decision,
@@ -261,9 +294,12 @@ export async function runTelegramProductionRuntime(env = process.env) {
         });
         failures = 0;
         for (const update of Array.isArray(updates) ? updates : []) {
-          const incoming = privateMessage(update);
+          const incoming = telegramMessageFromUpdate(update);
           if (incoming) {
-            const command = parseTelegramPayCommand(incoming.text);
+            const command = parseTelegramPayCommand(incoming.text, {
+              chatType: incoming.chatType,
+              botUsername,
+            });
             if (command.matched && command.error) {
               await telegramApiCall({
                 token: config.token,
@@ -312,6 +348,7 @@ export async function runTelegramProductionRuntime(env = process.env) {
                 status: checkout.paymentStatus,
                 chat_id: incoming.chatId,
                 telegram_message_id: String(sent.message_id),
+                address: command.address,
                 amount: command.amount,
                 checkout_url: checkout.checkoutUrl,
                 created_at: now,

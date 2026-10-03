@@ -131,6 +131,7 @@ function normalizeChatId(value) {
 export function buildTelegramStatusEdit({
   chatId,
   messageId,
+  address,
   amount,
   checkoutUrl,
   decision,
@@ -139,13 +140,18 @@ export function buildTelegramStatusEdit({
   const url = new URL(checkoutUrl);
   if (url.protocol !== "https:") throw new TypeError("checkout_url_invalid");
 
+  const displayAddress = String(address ?? "").trim();
+  const lines = ["PEPEW payment request"];
+  if (displayAddress) lines.push(`Address: ${displayAddress}`);
+  lines.push(
+    `Amount: ${String(amount).trim()} PEPEW`,
+    `Status: ${decision.text}`,
+  );
+
   return {
     chat_id: normalizeChatId(chatId),
     message_id: Number(normalizeMessageId(messageId)),
-    text: [
-      `PEPEW payment request: ${String(amount).trim()} PEPEW`,
-      decision.text,
-    ].join("\n"),
+    text: lines.join("\n"),
     link_preview_options: { is_disabled: true },
     reply_markup: {
       inline_keyboard: [[{ text: "Open PepewPay", url: url.toString() }]],
@@ -163,6 +169,7 @@ export async function applyTelegramPaymentWebhook({
   telegramToken,
   chatId,
   messageId,
+  address,
   amount,
   checkoutUrl,
   apiCall = telegramApiCall,
@@ -194,6 +201,7 @@ export async function applyTelegramPaymentWebhook({
   const edit = buildTelegramStatusEdit({
     chatId,
     messageId,
+    address,
     amount,
     checkoutUrl,
     decision,

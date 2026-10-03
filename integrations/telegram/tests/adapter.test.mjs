@@ -58,6 +58,13 @@ test("checkout uses stable identity and returns a Telegram inline URL button", a
   assert.equal(calls[0].idempotencyKey, telegramIdempotencyKey(identity));
   assert.equal(calls[0].label, "Telegram");
   assert.equal(result.sendMessage.chat_id, identity.chatId);
+  assert.match(result.sendMessage.text, /Address: PExample/);
+  assert.match(result.sendMessage.text, /Amount: 0\.10 PEPEW/);
+  assert.match(result.sendMessage.text, /Status: Waiting for payment\./);
+  assert.equal(
+    result.sendMessage.reply_markup.inline_keyboard[0][0].text,
+    "Open PepewPay",
+  );
   assert.equal(
     result.sendMessage.reply_markup.inline_keyboard[0][0].url,
     result.checkoutUrl,
@@ -94,6 +101,7 @@ test("Telegram pay message rejects non-HTTPS checkout URLs", () => {
     () =>
       buildTelegramPayMessage({
         chatId: identity.chatId,
+        address: "PExample",
         amount: "1",
         checkoutUrl: "http://example.invalid/pay",
       }),

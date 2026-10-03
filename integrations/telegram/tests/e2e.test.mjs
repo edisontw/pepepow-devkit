@@ -63,6 +63,7 @@ test("status edit keeps the real PepewPay capability button", () => {
   const edit = buildTelegramStatusEdit({
     chatId: "123",
     messageId: "456",
+    address: "PExample",
     amount: "0.1",
     checkoutUrl: "https://pay.pepepow.net/?payment_id=pay_abcdefgh1234",
     decision: {
@@ -72,7 +73,9 @@ test("status edit keeps the real PepewPay capability button", () => {
   });
   assert.equal(edit.chat_id, "123");
   assert.equal(edit.message_id, 456);
-  assert.match(edit.text, /payment confirmed/);
+  assert.match(edit.text, /Address: PExample/);
+  assert.match(edit.text, /Amount: 0\.1 PEPEW/);
+  assert.match(edit.text, /Status: PEPEW payment confirmed\./);
   assert.match(
     edit.reply_markup.inline_keyboard[0][0].url,
     /^https:\/\/pay\.pepepow\.net\//,
@@ -121,6 +124,7 @@ test("verified matching webhook edits Telegram exactly once", async () => {
     telegramToken: "123456789:abcdefghijklmnopqrstuvwxyz",
     chatId: "123",
     messageId: "456",
+    address: "PExample",
     amount: "0.1",
     checkoutUrl: "https://pay.pepepow.net/?payment_id=pay_abcdefgh1234",
     nowSeconds: timestamp,
