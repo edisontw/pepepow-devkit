@@ -47,8 +47,17 @@ export function parseTelegramPayCommand(text) {
   const match = /^\/(?:pay|pepew-pay)(?:@[A-Za-z0-9_]+)?(?:\s+(.+))?$/i.exec(input);
   if (!match) return { matched: false };
   if (!match[1]) return { matched: true, error: "usage" };
+
+  const parts = match[1].trim().split(/\s+/);
+  if (parts.length !== 2) return { matched: true, error: "usage" };
+
+  const [address, amount] = parts;
   try {
-    return { matched: true, amount: normalizeAmount(match[1]) };
+    return {
+      matched: true,
+      address,
+      amount: normalizeAmount(amount),
+    };
   } catch {
     return { matched: true, error: "amount" };
   }
@@ -117,7 +126,6 @@ export async function runTelegramProductionRuntime(env = process.env) {
     apiEnvironment: normalizeTelegramApiEnvironment(env.TELEGRAM_API_ENV ?? "production"),
     apiKey: required(env.PEPEW_MERCHANT_API_KEY, "merchant_api_key"),
     signingSecret: required(env.PEPEW_WEBHOOK_SIGNING_SECRET, "webhook_signing_secret"),
-    receiveAddress: required(env.PEPEW_RECEIVE_ADDRESS, "receive_address"),
     apiOrigin: env.PEPEW_PAYMENT_API_ORIGIN ?? "https://pay.pepepow.net",
     checkoutBaseUrl: env.PEPEW_CHECKOUT_BASE_URL ?? "https://pay.pepepow.net/",
     confirmations: positiveInt(env.PEPEW_CONFIRMATIONS, 1, "confirmations"),
@@ -262,7 +270,7 @@ export async function runTelegramProductionRuntime(env = process.env) {
                 method: "sendMessage",
                 body: {
                   chat_id: incoming.chatId,
-                  text: "Usage: /pay <amount>\nExample: /pay 10",
+                  text: "Usage: /pay <address> <amount>\nExample: /pay PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb 10",
                   link_preview_options: { is_disabled: true },
                 },
                 apiEnvironment: config.apiEnvironment,
@@ -281,7 +289,7 @@ export async function runTelegramProductionRuntime(env = process.env) {
             } else if (command.matched) {
               const checkout = await createTelegramCheckout({
                 merchantClient,
-                receiveAddress: config.receiveAddress,
+                receiveAddress: command.address,
                 amount: command.amount,
                 botId,
                 chatId: incoming.chatId,
