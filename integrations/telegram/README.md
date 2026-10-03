@@ -12,6 +12,14 @@ Private chat:
 /pay <PEPEW-address> <amount>
 ~~~
 
+Group or supergroup:
+
+~~~text
+/pay <PEPEW-address> <amount>
+~~~
+
+The explicit `/pay@BotName ...` form is also accepted when it targets this bot; commands explicitly addressed to another bot are ignored.
+
 Example:
 
 ~~~text
@@ -19,6 +27,8 @@ Example:
 ~~~
 
 The production runtime takes the receiving address from each command. It does not use a fixed PEPEW_RECEIVE_ADDRESS.
+
+The payment request is posted publicly in the originating chat and shows the receiving address, exact amount, PepewPay button, and current Payment Platform-driven status.
 
 Flow:
 
@@ -138,8 +148,9 @@ npm start
 The runtime:
 
 - uses Telegram production Bot API long polling;
-- accepts /pay <address> <amount>;
-- permits one outstanding payment at a time in the initial low-volume release;
+- accepts `/pay <address> <amount>` in private chats, groups, and supergroups;
+- accepts `/pay@BotName <address> <amount>` only when the mention targets this bot;
+- permits one outstanding payment globally per bot at a time in the initial low-volume release, across all chats;
 - stores only bounded routing/restart state locally;
 - receives a permanent signed Payment Platform webhook;
 - applies only increasing payment_version updates.
