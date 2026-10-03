@@ -13,6 +13,26 @@ Payment authority remains on `https://pay.pepepow.net`. edison2 stores only
 bot routing/restart state and the server-side credentials required by the
 adapters.
 
+## Production status
+
+**Production accepted: 2026-10-03**
+
+The minimal edison2 rollout is live and accepted:
+
+- Telegram and Discord systemd services are active and enabled.
+- Runtime listeners remain localhost-only on `127.0.0.1:8790` and `127.0.0.1:8791`.
+- Apache exposes only the exact Telegram webhook, Discord interaction, and Discord webhook callback paths.
+- Telegram and Discord use separate scoped merchant credentials and separate receiving addresses.
+- Permanent Payment Platform webhook endpoints are registered under the matching scoped merchants.
+- Discord Developer Portal Interactions Endpoint points to the production HTTPS interaction callback.
+- A real 0.1 PEPEW Telegram payment reached confirmed and updated its bot message.
+- A real 0.1 PEPEW Discord payment reached confirmed and updated the same ordinary channel message.
+- Bot-token, merchant-credential, and webhook-signing-secret log checks passed.
+- Temporary cross-host credential-transfer files and the one-time SSH transfer key/authorization were removed after deployment.
+- `https://pepepow.net/` remained HTTP 200 after the Apache route change.
+
+This runbook remains the recovery/redeployment reference. Do not repeat merchant creation or webhook registration blindly on an already-live host; first inspect the existing scoped merchant, endpoint, env-file, and systemd state.
+
 ## Boundaries
 
 - Do not move Payment Platform SQLite, watcher, webhook worker, mnemonic,
