@@ -88,7 +88,6 @@ export async function runDiscordProductionRuntime(env = process.env) {
     botToken: required(env.DISCORD_BOT_TOKEN, "discord_bot_token"),
     apiKey: required(env.PEPEW_MERCHANT_API_KEY, "merchant_api_key"),
     signingSecret: required(env.PEPEW_WEBHOOK_SIGNING_SECRET, "webhook_signing_secret"),
-    receiveAddress: required(env.PEPEW_RECEIVE_ADDRESS, "receive_address"),
     apiOrigin: env.PEPEW_PAYMENT_API_ORIGIN ?? "https://pay.pepepow.net",
     checkoutBaseUrl: env.PEPEW_CHECKOUT_BASE_URL ?? "https://pay.pepepow.net/",
     confirmations: positiveInt(env.PEPEW_CONFIRMATIONS, 1, "confirmations"),
@@ -128,7 +127,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
     try {
       const checkout = await createDiscordCheckout({
         merchantClient,
-        receiveAddress: config.receiveAddress,
+        receiveAddress: command.address,
         amount: command.amount,
         applicationId: command.applicationId,
         channelId: command.channelId,
@@ -216,7 +215,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
         json(res, 200, {
           type: 4,
           data: {
-            content: `Creating PEPEW payment request for ${command.amount} PEPEW.`,
+            content: `Creating PEPEW payment request for ${command.amount} PEPEW to ${command.address}.`,
             flags: 64,
             allowed_mentions: { parse: [] },
           },
