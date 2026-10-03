@@ -9,7 +9,7 @@ https://pepepow.net
 
 This host runs the low-volume Telegram and Discord payment adapters. Payment authority remains on https://pay.pepepow.net.
 
-Current production status: the user-supplied receiving-address contract is deployed on edison2; Telegram and Discord real-payment acceptance passed on 2026-10-03.
+Current production status: the user-supplied receiving-address contract is deployed on edison2; Telegram and Discord real-payment acceptance passed on 2026-10-03, and Telegram group `/pay` live acceptance also passed on 2026-10-03.
 
 Day-to-day checks are in ../../docs/BOT_OPERATIONS.md.
 
@@ -26,23 +26,25 @@ Day-to-day checks are in ../../docs/BOT_OPERATIONS.md.
 
 ## Upgrade an existing installation
 
-For an existing edison2 deployment:
+For an existing edison2 deployment, run repository Git/npm commands as the normal `ubuntu` user. Do not use `sudo git` or `sudo npm`; root has a different GitHub credential/SSH environment and root-owned repository files make later upgrades harder.
+
+The existing production checkout uses the SSH remote `git@github.com:edisontw/pepepow-devkit.git`.
 
 ~~~bash
 cd /opt/pepepow-devkit
-sudo git pull --ff-only
+git pull --ff-only
 
 cd packages/pepewpay-merchant
-sudo npm install --no-audit --no-fund
-sudo npm run build
+npm install --no-audit --no-fund
+npm run build
 
 cd ../../integrations/telegram
-sudo npm install --no-audit --no-fund
-sudo npm test
+npm install --no-audit --no-fund
+npm test
 
 cd ../discord
-sudo npm install --no-audit --no-fund
-sudo npm test
+npm install --no-audit --no-fund
+npm test
 ~~~
 
 Remove the obsolete fixed receive-address setting if present:
@@ -92,23 +94,24 @@ Required:
 
 ### 2. Checkout and test
 
+Create the checkout as the normal `ubuntu` user so future pulls and npm operations do not require root:
+
 ~~~bash
-sudo mkdir -p /opt
-cd /opt
-sudo git clone https://github.com/edisontw/pepepow-devkit.git
+sudo install -d -o ubuntu -g ubuntu /opt/pepepow-devkit
+git clone https://github.com/edisontw/pepepow-devkit.git /opt/pepepow-devkit
 cd /opt/pepepow-devkit
 
 cd packages/pepewpay-merchant
-sudo npm install --no-audit --no-fund
-sudo npm run build
+npm install --no-audit --no-fund
+npm run build
 
 cd ../../integrations/telegram
-sudo npm install --no-audit --no-fund
-sudo npm test
+npm install --no-audit --no-fund
+npm test
 
 cd ../discord
-sudo npm install --no-audit --no-fund
-sudo npm test
+npm install --no-audit --no-fund
+npm test
 ~~~
 
 ### 3. Service account and env files
