@@ -163,6 +163,7 @@ As of 2026-10-03:
 - WooCommerce, Telegram, and Discord integrations are implemented and contract-tested.
 - multi-merchant scoped credentials are supported without changing the merchant SDK Bearer transport.
 - Telegram/Discord always-on production runtimes use a user-supplied receiving address per payment command; the corrected contract was deployed and real Telegram/Discord payments passed on 2026-10-03.
+- Telegram private/group/supergroup `/pay` support is deployed on edison2; live group payment acceptance passed on 2026-10-03.
 
 Detailed phase history and production architecture are maintained in edisontw/pepepow-electrumx-service/docs/PAYMENT_PLATFORM_ROADMAP.md.
 
