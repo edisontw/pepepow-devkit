@@ -152,6 +152,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function telegramPaymentCreateConflictText(error) {
+  if (
+    error instanceof MerchantApiError &&
+    error.status === 409 &&
+    error.code === "payment_address_in_use"
+  ) {
+    return "This PEPEW address already has a payment request in its active time window. Use a different address or try again after that request expires.";
+  }
+  return null;
+}
+
 export async function runTelegramProductionRuntime(env = process.env) {
   const config = {
     token: required(env.TELEGRAM_BOT_TOKEN, "telegram_bot_token"),
@@ -349,24 +360,18 @@ export async function runTelegramProductionRuntime(env = process.env) {
                 await store.save(state);
                 console.log("telegram_payment_created");
               } catch (error) {
-                if (
-                  error instanceof MerchantApiError &&
-                  error.status === 409 &&
-                  error.code === "payment_address_in_use"
-                ) {
-                  await telegramApiCall({
-                    token: config.token,
-                    method: "sendMessage",
-                    body: {
-                      chat_id: incoming.chatId,
-                      text: "This PEPEW address already has a payment request in its active time window. Use a different address or try again after that request expires.",
-                      link_preview_options: { is_disabled: true },
-                    },
-                    apiEnvironment: config.apiEnvironment,
-                  });
-                } else {
-                  throw error;
-                }
+                const conflictText = telegramPaymentCreateConflictText(error);
+                if (!conflictText) throw error;
+                await telegramApiCall({
+                  token: config.token,
+                  method: "sendMessage",
+                  body: {
+                    chat_id: incoming.chatId,
+                    text: conflictText,
+                    link_preview_options: { is_disabled: true },
+                  },
+                  apiEnvironment: config.apiEnvironment,
+                });
               }
             }
           }
