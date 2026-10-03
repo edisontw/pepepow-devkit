@@ -168,6 +168,13 @@ export function extractDiscordPaymentCommand(interaction) {
   const options = Array.isArray(interaction.data.options)
     ? interaction.data.options
     : [];
+  const addressOption = options.find(
+    (option) =>
+      option &&
+      typeof option === "object" &&
+      option.name === "address" &&
+      option.type === 3,
+  );
   const amountOption = options.find(
     (option) =>
       option &&
@@ -176,6 +183,13 @@ export function extractDiscordPaymentCommand(interaction) {
       option.type === 3,
   );
 
+  if (
+    !addressOption ||
+    typeof addressOption.value !== "string" ||
+    !addressOption.value.trim()
+  ) {
+    throw new DiscordInteractionError("discord_address_option_invalid");
+  }
   if (!amountOption || typeof amountOption.value !== "string") {
     throw new DiscordInteractionError("discord_amount_option_invalid");
   }
@@ -184,6 +198,7 @@ export function extractDiscordPaymentCommand(interaction) {
     applicationId,
     channelId,
     interactionId,
+    address: addressOption.value.trim(),
     amount: amountOption.value,
   };
 }
@@ -193,6 +208,12 @@ export const DISCORD_PAYMENT_COMMAND = Object.freeze({
   description: "Create a PEPEW payment request",
   type: 1,
   options: [
+    {
+      type: 3,
+      name: "address",
+      description: "PEPEW receiving address for this payment",
+      required: true,
+    },
     {
       type: 3,
       name: "amount",

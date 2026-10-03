@@ -22,7 +22,7 @@ The minimal edison2 rollout is live and accepted:
 - Telegram and Discord systemd services are active and enabled.
 - Runtime listeners remain localhost-only on `127.0.0.1:8790` and `127.0.0.1:8791`.
 - Apache exposes only the exact Telegram webhook, Discord interaction, and Discord webhook callback paths.
-- Telegram and Discord use separate scoped merchant credentials and separate receiving addresses.
+- Telegram and Discord use separate scoped merchant credentials; the receiving address is supplied per user command.
 - Permanent Payment Platform webhook endpoints are registered under the matching scoped merchants.
 - Discord Developer Portal Interactions Endpoint points to the production HTTPS interaction callback.
 - A real 0.1 PEPEW Telegram payment reached confirmed and updated its bot message.
@@ -39,15 +39,15 @@ For normal user commands and day-to-day service checks/restarts, see [../../docs
 
 - Do not move Payment Platform SQLite, watcher, webhook worker, mnemonic,
   private keys, or wallet signing to edison2.
-- Telegram and Discord use separate scoped merchant credentials and separate receiving addresses.
+- Telegram and Discord use separate scoped merchant credentials; neither runtime has a fixed receiving address.
 - Bot tokens, merchant credentials, and webhook signing secrets stay in
   `/etc/pepew-bots/*.env`; never put them in GitHub, chat, or logs.
 - Runtime listeners bind only to `127.0.0.1`.
 - Apache exposes only the three required HTTPS callback paths.
 - Local JSON files are message-routing/restart state, not payment authority.
 - The first production release intentionally permits one outstanding payment per
-  bot at a time. This matches current low usage and avoids overlapping invoices
-  on one receiving address without adding an address-pool/derivation service.
+  bot at a time. This remains a simple low-volume concurrency limit; it is no
+  longer tied to a shared receiving address.
 
 ## 1. Preflight
 
@@ -135,7 +135,7 @@ python3 backend/scripts/merchant_credential_admin.py create-credential \
 
 The helper does not print generated Bearer secrets. Transfer each secret through
 an approved private path into the matching edison2 env file, then delete the
-temporary transfer copy. Never share one scoped credential or receiving address between both bots.
+temporary transfer copy. Never share one scoped credential between both bots. Receiving addresses come from individual user commands and are not stored in the runtime env file.
 
 ## 5. Apache HTTPS callback routes
 
@@ -256,7 +256,7 @@ sudo -u pepew-bot bash -c '
 Expected command:
 
 ```text
-/pepew-pay amount:10
+/pepew-pay address:<PEPEW-address> amount:10
 ```
 
 ## 9. Telegram bot
@@ -267,7 +267,7 @@ must therefore have no Telegram webhook configured.
 Supported private-chat command:
 
 ```text
-/pay 10
+/pay <PEPEW-address> 10
 ```
 
 The response contains a real PepewPay button. Payment status updates come only
@@ -281,7 +281,7 @@ merchant receiving address.
 Telegram:
 
 ```text
-/pay 0.1
+/pay <PEPEW-address> 0.1
 -> PepewPay button
 -> integrated wallet payment
 -> detected / waiting for confirmations
@@ -291,7 +291,7 @@ Telegram:
 Discord:
 
 ```text
-/pepew-pay amount:0.1
+/pepew-pay address:<PEPEW-address> amount:0.1
 -> ordinary channel payment message + PepewPay button
 -> integrated wallet payment
 -> same message updates to pending

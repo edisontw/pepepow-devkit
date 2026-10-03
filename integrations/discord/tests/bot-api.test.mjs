@@ -90,7 +90,8 @@ test("Discord guild command is created without replacing unrelated commands", as
   assert.equal(calls[0].init.method, "GET");
   assert.equal(calls[1].init.method, "POST");
   const command = JSON.parse(calls[1].init.body);
-  assert.equal(command.options[0].type, 3);
+  assert.equal(command.options.find((option) => option.name === "address")?.required, true);
+  assert.equal(command.options.find((option) => option.name === "amount")?.required, true);
 });
 
 test("Discord guild command is patched in place when it already exists", async () => {
