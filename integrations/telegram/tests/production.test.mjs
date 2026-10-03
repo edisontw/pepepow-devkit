@@ -1,8 +1,10 @@
+import { MerchantApiError } from "@pepepow/pepewpay-merchant";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
   parseTelegramPayCommand,
   telegramMessageFromUpdate,
+  telegramPaymentCreateConflictText,
 } from "../src/production.mjs";
 
 const botUsername = "PepewPayBot";
@@ -100,6 +102,22 @@ test("runtime accepts private, group, and supergroup messages only", () => {
         chat: { id: -100123, type: "channel" },
       },
     }),
+    null,
+  );
+});
+
+
+test("Telegram maps Payment Platform address-window conflicts to a user message", () => {
+  const conflict = new MerchantApiError(409, "payment_address_in_use");
+  assert.match(
+    telegramPaymentCreateConflictText(conflict),
+    /active time window/,
+  );
+
+  assert.equal(
+    telegramPaymentCreateConflictText(
+      new MerchantApiError(409, "payment_merchant_reference_conflict"),
+    ),
     null,
   );
 });
