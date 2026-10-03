@@ -64,8 +64,10 @@ export function telegramIdempotencyKey(identity) {
   return `tg:create:${identityDigest(identity)}:v1`;
 }
 
-export function buildTelegramPayMessage({ chatId, amount, checkoutUrl }) {
+export function buildTelegramPayMessage({ chatId, address, amount, checkoutUrl }) {
   const chat = normalizeId(chatId, "chat_id", TELEGRAM_ID_RE);
+  const displayAddress = String(address ?? "").trim();
+  if (!displayAddress) throw new TypeError("address_required");
   const exactAmount = normalizeAmount(amount);
   const url = new URL(checkoutUrl);
   if (url.protocol !== "https:") {
@@ -74,13 +76,18 @@ export function buildTelegramPayMessage({ chatId, amount, checkoutUrl }) {
 
   return {
     chat_id: chat,
-    text: `PEPEW payment request: ${exactAmount} PEPEW`,
+    text: [
+      "PEPEW payment request",
+      `Address: ${displayAddress}`,
+      `Amount: ${exactAmount} PEPEW`,
+      "Status: Waiting for payment.",
+    ].join("\n"),
     link_preview_options: { is_disabled: true },
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: "Pay with PEPEW",
+            text: "Open PepewPay",
             url: url.toString(),
           },
         ],
@@ -146,6 +153,7 @@ export async function createTelegramCheckout({
     checkoutUrl,
     sendMessage: buildTelegramPayMessage({
       chatId,
+      address: receiveAddress,
       amount: exactAmount,
       checkoutUrl,
     }),
