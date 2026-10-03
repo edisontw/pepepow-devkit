@@ -12,4 +12,4 @@ await ensureDiscordGuildPaymentCommand({
   guildId: required("DISCORD_GUILD_ID"),
 });
 
-console.log("Discord guild-scoped /pepew-pay test command is ready.");
+console.log("Discord guild-scoped /pepew-pay command is ready.");
