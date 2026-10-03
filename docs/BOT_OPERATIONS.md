@@ -19,6 +19,10 @@ This guide is for normal bot use and day-to-day operations. Full deployment and 
 
 ## 1. User commands
 
+The current bot contract requires the user to supply the PEPEW receiving address
+for every payment request. The always-on runtimes do not use a fixed
+`PEPEW_RECEIVE_ADDRESS`.
+
 ### Telegram
 
 Use the dedicated PEPEW payment bot in a **private chat**.
@@ -26,26 +30,20 @@ Use the dedicated PEPEW payment bot in a **private chat**.
 Command:
 
 ```text
-/pay <amount>
+/pay <address> <amount>
 ```
 
 Example:
 
 ```text
-/pay 10
-```
-
-or:
-
-```text
-/pay 0.1
+/pay PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb 0.1
 ```
 
 Expected flow:
 
 ```text
-/pay 0.1
-  -> bot creates a PEPEW payment request
+/pay <address> 0.1
+  -> bot creates a PEPEW payment request for that address
   -> bot returns an Open PepewPay button
   -> payer opens PepewPay and completes payment in a PEPEW wallet
   -> bot message updates when payment is detected
@@ -59,26 +57,21 @@ The Telegram production bot accepts private-chat payment commands only.
 Use the slash command in the configured Discord server:
 
 ```text
-/pepew-pay amount:<amount>
+/pepew-pay address:<address> amount:<amount>
 ```
 
 Example:
 
 ```text
-/pepew-pay amount:10
-```
-
-or:
-
-```text
-/pepew-pay amount:0.1
+/pepew-pay address:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb amount:0.1
 ```
 
 Expected flow:
 
 ```text
-/pepew-pay amount:0.1
-  -> Discord acknowledges the interaction
+/pepew-pay address:<address> amount:0.1
+  -> Discord acknowledges the signed interaction
+  -> bot creates a payment for the supplied PEPEW address
   -> bot creates an ordinary channel payment message
   -> message includes an Open PepewPay button
   -> payer completes payment in a PEPEW wallet
@@ -88,7 +81,13 @@ Expected flow:
 
 The Discord bot may appear offline because this integration uses Discord HTTP Interactions rather than a persistent Gateway/WebSocket connection.
 
-## 2. Amount rules and initial production limits
+## 2. Address/amount rules and initial production limits
+
+Address:
+
+- is supplied by the user for each payment request;
+- is passed to the authoritative Payment Platform, which performs PEPEW address validation;
+- is not derived by the bot and does not require a mnemonic or private key.
 
 Amounts:
 
@@ -100,11 +99,11 @@ Initial production policy:
 
 - Telegram permits one outstanding payment at a time.
 - Discord permits one outstanding payment at a time.
-- Telegram and Discord use different merchant receiving addresses.
+- Telegram and Discord still use different scoped merchant credentials, but neither runtime has a fixed receiving address.
 - Current production payment expiry is 900 seconds (15 minutes).
 - Current production confirmation policy is 1 confirmation.
 
-If a payment is already in progress, a second request is rejected until the current payment reaches a terminal state or expires.
+If a payment is already in progress, a second request is rejected until the current payment reaches a terminal state or expires. This low-volume concurrency limit is retained independently of the receiving-address change.
 
 Do not add address-pool, HD derivation, queue, Redis, PostgreSQL, or other concurrency infrastructure until real usage demonstrates the need.
 
@@ -388,8 +387,9 @@ Expected:
 
 Accepted on 2026-10-03:
 
-- real Telegram `/pay 0.1` payment -> confirmed -> bot message updated;
-- real Discord `/pepew-pay amount:0.1` payment -> confirmed -> same channel message updated;
+- historical acceptance used the earlier fixed-address Telegram `/pay 0.1` flow -> confirmed -> bot message updated;
+- historical acceptance used the earlier fixed-address Discord `/pepew-pay amount:0.1` flow -> confirmed -> same channel message updated;
+- current GitHub contract corrects this by requiring a receiving address in every Telegram/Discord command; redeploy current `main` before using the new syntax in production;
 - both services active/enabled;
 - localhost-only listeners verified;
 - Apache exact callback routes verified;
