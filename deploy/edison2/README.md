@@ -9,6 +9,8 @@ https://pepepow.net
 
 This host runs the low-volume Telegram and Discord payment adapters. Payment authority remains on https://pay.pepepow.net.
 
+Current production status: the user-supplied receiving-address contract is deployed on edison2; Telegram and Discord real-payment acceptance passed on 2026-10-03.
+
 Day-to-day checks are in ../../docs/BOT_OPERATIONS.md.
 
 ## Boundaries
