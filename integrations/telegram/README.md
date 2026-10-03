@@ -150,7 +150,8 @@ The runtime:
 - uses Telegram production Bot API long polling;
 - accepts `/pay <address> <amount>` in private chats, groups, and supergroups;
 - accepts `/pay@BotName <address> <amount>` only when the mention targets this bot;
-- permits one outstanding payment globally per bot at a time in the initial low-volume release, across all chats;
+- permits multiple outstanding payments across chats when different receiving addresses are used;
+- treats Payment Platform `409 payment_address_in_use` as a user-visible same-address reservation conflict instead of a generic transport failure;
 - stores only bounded routing/restart state locally;
 - receives a permanent signed Payment Platform webhook;
 - applies only increasing payment_version updates.
