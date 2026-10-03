@@ -357,7 +357,7 @@ The production runtime:
 - verifies every Discord interaction against the exact raw request body;
 - acknowledges the slash command before creating the payment;
 - posts an ordinary channel message with the PepewPay button;
-- supports multiple low-volume outstanding payments;
+- intentionally allows only one outstanding payment at a time for the first low-volume production release;
 - persists only message-routing/restart state in a mode-0600 local JSON file;
 - receives a permanent signed Payment Platform webhook endpoint;
 - updates only on increasing `payment_version`;
