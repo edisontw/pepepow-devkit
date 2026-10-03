@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import {
+  MerchantApiError,
   MerchantClient,
   WebhookVerificationError,
   verifyWebhook,
@@ -111,16 +112,10 @@ export async function runDiscordProductionRuntime(env = process.env) {
   store.prune(state);
   await store.save(state);
   const merchantClient = new MerchantClient({ apiKey: config.apiKey, apiOrigin: config.apiOrigin });
-  let paymentCreationInProgress = false;
+  const paymentCreationsInProgress = new Set();
 
-  async function createPayment(command) {
-    const reference = discordMerchantReference({
-      applicationId: command.applicationId,
-      channelId: command.channelId,
-      interactionId: command.interactionId,
-    });
+  async function createPayment(command, reference) {
     if (findByMerchantReference(state, reference)) {
-      paymentCreationInProgress = false;
       return;
     }
 
@@ -158,12 +153,18 @@ export async function runDiscordProductionRuntime(env = process.env) {
       console.log("discord_payment_created");
     } catch (error) {
       console.error(`discord_payment_create_failed code=${safeCode(error)}`);
+      const content =
+        error instanceof MerchantApiError &&
+        error.status === 409 &&
+        error.code === "payment_address_in_use"
+          ? "This PEPEW address already has a payment request in its active time window. Use a different address or try again after that request expires."
+          : "PEPEW payment request could not be created. Please try again.";
       try {
         await createDiscordChannelMessage({
           token: config.botToken,
           channelId: command.channelId,
           message: {
-            content: "PEPEW payment request could not be created. Please try again.",
+            content,
             allowed_mentions: { parse: [] },
           },
         });
@@ -171,7 +172,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
         console.error(`discord_payment_failure_notice_failed code=${safeCode(notifyError)}`);
       }
     } finally {
-      paymentCreationInProgress = false;
+      paymentCreationsInProgress.delete(reference);
     }
   }
 
@@ -200,18 +201,26 @@ export async function runDiscordProductionRuntime(env = process.env) {
           return;
         }
         const command = extractDiscordPaymentCommand(interaction);
-        if (paymentCreationInProgress || pendingPaymentCount(state) > 0) {
+        const reference = discordMerchantReference({
+          applicationId: command.applicationId,
+          channelId: command.channelId,
+          interactionId: command.interactionId,
+        });
+        if (
+          paymentCreationsInProgress.has(reference) ||
+          findByMerchantReference(state, reference)
+        ) {
           json(res, 200, {
             type: 4,
             data: {
-              content: "A PEPEW payment is already in progress. Please try again after it is confirmed or expires.",
+              content: "This PEPEW payment request is already being processed.",
               flags: 64,
               allowed_mentions: { parse: [] },
             },
           });
           return;
         }
-        paymentCreationInProgress = true;
+        paymentCreationsInProgress.add(reference);
         json(res, 200, {
           type: 4,
           data: {
@@ -220,7 +229,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
             allowed_mentions: { parse: [] },
           },
         });
-        void createPayment(command);
+        void createPayment(command, reference);
       } catch (error) {
         if (error instanceof DiscordInteractionError) {
           empty(res, 401);
