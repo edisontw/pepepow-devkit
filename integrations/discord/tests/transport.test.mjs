@@ -75,6 +75,11 @@ test("pepew-pay slash command is deferred and preserves exact string amount", ()
       options: [
         {
           type: 3,
+          name: "address",
+          value: "PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb",
+        },
+        {
+          type: 3,
           name: "amount",
           value: "0.10000000",
         },
@@ -87,6 +92,7 @@ test("pepew-pay slash command is deferred and preserves exact string amount", ()
     applicationId: interaction.application_id,
     channelId: interaction.channel_id,
     interactionId: interaction.id,
+    address: "PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb",
     amount: "0.10000000",
   });
 });
@@ -102,7 +108,10 @@ test("Discord payment command never needs invoking user identity", () => {
     },
     data: {
       name: "pepew-pay",
-      options: [{ type: 3, name: "amount", value: "1.25" }],
+      options: [
+        { type: 3, name: "address", value: "PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb" },
+        { type: 3, name: "amount", value: "1.25" },
+      ],
     },
   };
 
@@ -110,9 +119,31 @@ test("Discord payment command never needs invoking user identity", () => {
   assert.equal(Object.hasOwn(command, "userId"), false);
 });
 
-test("Discord command amount uses a string option to avoid floating-point authority", () => {
-  assert.equal(DISCORD_PAYMENT_COMMAND.options[0].name, "amount");
-  assert.equal(DISCORD_PAYMENT_COMMAND.options[0].type, 3);
+test("Discord command requires address and keeps amount as a string option", () => {
+  const address = DISCORD_PAYMENT_COMMAND.options.find((option) => option.name === "address");
+  const amount = DISCORD_PAYMENT_COMMAND.options.find((option) => option.name === "amount");
+
+  assert.equal(address?.type, 3);
+  assert.equal(address?.required, true);
+  assert.equal(amount?.type, 3);
+  assert.equal(amount?.required, true);
+});
+
+test("Discord payment command rejects a missing address option", () => {
+  assert.throws(
+    () =>
+      extractDiscordPaymentCommand({
+        id: "1434567890123456789",
+        application_id: "1412345678901234567",
+        channel_id: "1423456789012345678",
+        type: 2,
+        data: {
+          name: "pepew-pay",
+          options: [{ type: 3, name: "amount", value: "1" }],
+        },
+      }),
+    /discord_address_option_invalid/,
+  );
 });
 
 test("unsupported Discord interactions fail closed", () => {
