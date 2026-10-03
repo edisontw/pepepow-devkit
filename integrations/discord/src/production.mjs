@@ -257,7 +257,7 @@ export async function runDiscordProductionRuntime(env = process.env) {
         record.current_version = decision.paymentVersion;
         record.status = decision.paymentStatus;
         record.updated_at = Math.floor(Date.now() / 1000);
-        if (decision.terminal) record.terminal_at = record.updated_at;
+        record.terminal_at = decision.terminal ? record.updated_at : null;
         await store.save(state);
         empty(res, 204);
       } catch (error) {
