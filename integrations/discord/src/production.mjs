@@ -120,7 +120,10 @@ export async function runDiscordProductionRuntime(env = process.env) {
       channelId: command.channelId,
       interactionId: command.interactionId,
     });
-    if (findByMerchantReference(state, reference)) return;
+    if (findByMerchantReference(state, reference)) {
+      paymentCreationInProgress = false;
+      return;
+    }
 
     try {
       const checkout = await createDiscordCheckout({
