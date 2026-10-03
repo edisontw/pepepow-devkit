@@ -267,6 +267,17 @@ export async function runTelegramProductionRuntime(env = process.env) {
                 },
                 apiEnvironment: config.apiEnvironment,
               });
+            } else if (command.matched && pendingPaymentCount(state) > 0) {
+              await telegramApiCall({
+                token: config.token,
+                method: "sendMessage",
+                body: {
+                  chat_id: incoming.chatId,
+                  text: "A PEPEW payment is already in progress. Please try again after it is confirmed or expires.",
+                  link_preview_options: { is_disabled: true },
+                },
+                apiEnvironment: config.apiEnvironment,
+              });
             } else if (command.matched) {
               const checkout = await createTelegramCheckout({
                 merchantClient,
