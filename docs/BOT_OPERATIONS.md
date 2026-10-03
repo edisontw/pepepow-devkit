@@ -218,4 +218,4 @@ curl -fsSI https://pepepow.net/ | head
 sudo ss -ltnp | grep -E '127\.0\.0\.1:(8790|8791)\b'
 ~~~
 
-For a host still running the pre-33c29b9 fixed-address bot contract, follow the upgrade section in ../deploy/edison2/README.md before using the current command syntax.
+Production acceptance on 2026-10-03 confirmed the current user-supplied-address command contract with successful real Telegram and Discord payments. Use ../deploy/edison2/README.md for future upgrades or recovery.
