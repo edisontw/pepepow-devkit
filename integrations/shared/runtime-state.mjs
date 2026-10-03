@@ -40,7 +40,7 @@ function validateState(value, platform) {
 }
 
 export class RuntimeStateStore {
-  constructor({ path, platform, terminalRetentionSeconds = 7 * 24 * 60 * 60 }) {
+  constructor({ path, platform, terminalRetentionSeconds = 30 * 24 * 60 * 60 }) {
     if (!path) throw new TypeError("runtime_state_path_required");
     this.path = path;
     this.platform = cleanPlatform(platform);
