@@ -17,12 +17,15 @@ adapters.
 
 - Do not move Payment Platform SQLite, watcher, webhook worker, mnemonic,
   private keys, or wallet signing to edison2.
-- Telegram and Discord use separate scoped merchant credentials.
+- Telegram and Discord use separate scoped merchant credentials and separate receiving addresses.
 - Bot tokens, merchant credentials, and webhook signing secrets stay in
   `/etc/pepew-bots/*.env`; never put them in GitHub, chat, or logs.
 - Runtime listeners bind only to `127.0.0.1`.
 - Apache exposes only the three required HTTPS callback paths.
 - Local JSON files are message-routing/restart state, not payment authority.
+- The first production release intentionally permits one outstanding payment per
+  bot at a time. This matches current low usage and avoids overlapping invoices
+  on one receiving address without adding an address-pool/derivation service.
 
 ## 1. Preflight
 
@@ -110,7 +113,7 @@ python3 backend/scripts/merchant_credential_admin.py create-credential \
 
 The helper does not print generated Bearer secrets. Transfer each secret through
 an approved private path into the matching edison2 env file, then delete the
-temporary transfer copy. Never share one scoped credential between both bots.
+temporary transfer copy. Never share one scoped credential or receiving address between both bots.
 
 ## 5. Apache HTTPS callback routes
 
