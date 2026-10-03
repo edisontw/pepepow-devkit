@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { MerchantApiError } from "@pepepow/pepewpay-merchant";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -120,4 +121,11 @@ test("Telegram maps Payment Platform address-window conflicts to a user message"
     ),
     null,
   );
+});
+
+
+test("Telegram production runtime has no global pending-payment gate", async () => {
+  const source = await readFile(new URL("../src/production.mjs", import.meta.url), "utf8");
+  assert.equal(source.includes("pendingPaymentCount(state) > 0"), false);
+  assert.equal(source.includes("A PEPEW payment is already in progress"), false);
 });
