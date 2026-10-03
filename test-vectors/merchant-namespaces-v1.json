@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "description": "Deterministic Phase K merchant-namespace contract fixture. Credentials are test-only values.",
+  "shared": {
+    "address": "PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb",
+    "amount": "1.25",
+    "merchant_reference": "ORDER-SHARED-1001",
+    "idempotency_key": "create:ORDER-SHARED-1001:v1"
+  },
+  "merchants": [
+    {
+      "name": "merchant-a",
+      "api_key": "test_scoped_merchant_a_0123456789abcdef",
+      "expected_payment_id": "pay_namespace_a_0001"
+    },
+    {
+      "name": "merchant-b",
+      "api_key": "test_scoped_merchant_b_0123456789abcdef",
+      "expected_payment_id": "pay_namespace_b_0001"
+    }
+  ],
+  "invariants": [
+    "The same merchant_reference may exist independently for two authenticated merchants.",
+    "The same Idempotency-Key may exist independently for two authenticated merchants.",
+    "Authenticated exact-reference recovery returns only the caller merchant's payment.",
+    "The SDK uses the same Authorization: Bearer transport for scoped credentials."
+  ]
+}
