@@ -299,7 +299,7 @@ The production runtime:
 
 - accepts private-chat `/pay <amount>`;
 - uses Telegram production Bot API long polling;
-- supports multiple low-volume outstanding payments;
+- intentionally allows only one outstanding payment at a time for the first low-volume production release;
 - persists only message-routing/restart state in a mode-0600 local JSON file;
 - receives a permanent signed Payment Platform webhook endpoint;
 - applies only increasing `payment_version` updates;
