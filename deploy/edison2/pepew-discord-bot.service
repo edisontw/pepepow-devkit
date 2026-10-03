@@ -1,0 +1,39 @@
+[Unit]
+Description=PEPEW Discord Payment Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pepew-bot
+Group=pepew-bot
+WorkingDirectory=/opt/pepepow-devkit/integrations/discord
+Environment=NODE_ENV=production
+Environment=PEPEW_BOT_HOST=127.0.0.1
+Environment=PEPEW_BOT_PORT=8791
+Environment=DISCORD_INTERACTIONS_PATH=/pepew-discord/interactions
+Environment=PEPEW_WEBHOOK_PATH=/pepew-discord/webhooks/pepew
+Environment=PEPEW_STATE_FILE=/var/lib/pepew-bots/discord-state.json
+EnvironmentFile=/etc/pepew-bots/discord.env
+EnvironmentFile=/etc/pepew-bots/discord-webhook.env
+ExecStart=/usr/bin/node scripts/runtime.mjs
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+UMask=0077
+StateDirectory=pepew-bots
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/pepew-bots
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
