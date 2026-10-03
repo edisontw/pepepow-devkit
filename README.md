@@ -1,244 +1,171 @@
 # PEPEPOW DevKit
 
-Developer-facing protocol and payment tooling for PEPEPOW / PEPEW.
+Developer-facing protocol, checkout, merchant integration, and payment-adapter tooling for PEPEPOW / PEPEW.
 
-## Scope
+## Repository layout
 
-```text
+~~~text
 packages/
-  pepew-js/
-  pepewpay-merchant/
-
-specs/
-  payment-uri/
-    v1.md
+  pepew-js/                 Payment URI parsing/serialization and address helpers
+  pepewpay-merchant/        Server-side merchant SDK
 
 apps/
-  pepewpay/
+  pepewpay/                 Public checkout UI
+
+integrations/
+  woocommerce/
+  telegram/
+  discord/
 
 examples/
   merchant-node/
   merchant-app/
 
-integrations/
-  woocommerce/
-    pepew-payments/
-  telegram/
-  discord/
+specs/
+  payment-uri/v1.md
 
 test-vectors/
   payment-uri-v1.json
   merchant-namespaces-v1.json
-```
+~~~
 
-Primary development sequence completed through Phase I:
+Server-side Payment/Event Gateway, authoritative payment state, webhook infrastructure, and production persistence belong in edisontw/pepepow-electrumx-service.
 
-```text
-pepew-js
-  -> PEPEW Payment URI
-  -> PepewPay
-  -> merchant SDK/helpers
-  -> merchant onboarding / distribution
-```
+Wallet mnemonic handling, derivation, transaction construction/signing, and wallet UI belong in edisontw/pepepow-light-wallet.
 
-Phase K multi-merchant credential and ownership isolation is production-validated
-through K5 in the server repository. DevKit K6 aligns onboarding/testing with
-the scoped model. The SDK transport remains unchanged:
-`Authorization: Bearer <credential>`.
+## Core components
 
-The server-side Payment/Event Gateway and webhook infrastructure belong in `edisontw/pepepow-electrumx-service`.
+### PEPEW Payment URI
 
-The client wallet, mnemonic handling, derivation, transaction construction/signing, and wallet UI belong in `edisontw/pepepow-light-wallet`.
+The canonical v1 format uses exact 8-decimal PEPEW amounts and PEPEPOW P2PKH Base58Check addresses.
 
-## Phase A protocol foundation
+Example:
 
-Implemented on `main`:
-
-- PEPEW Payment URI v1 specification
-- exact 8-decimal PEPEW amount handling
-- PEPEPOW P2PKH Base58Check validation using version byte `0x37`
-- deterministic Payment URI parser/serializer
-- shared valid/invalid URI test vectors
-- Node 20 build/test workflow
-
-Canonical example:
-
-```text
+~~~text
 pepew:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb?amount=12.34&label=Coffee%20Shop&message=Order%201234
-```
+~~~
 
-Development:
+Specification: specs/payment-uri/v1.md
 
-```bash
+### PepewPay
+
+apps/pepewpay is a static checkout UI that:
+
+- reads public payment capability state from the Payment Platform;
+- generates PEPEW Payment URI/QR output;
+- hands payment to a compatible wallet;
+- contains no mnemonic, private-key, derivation, or signing logic.
+
+### Merchant SDK
+
+packages/pepewpay-merchant provides server-side helpers for:
+
+- authenticated payment create/recovery;
+- public checkout URL construction;
+- exact-raw-body webhook verification;
+- replay-window validation;
+- payment_version ordering.
+
+Merchant credentials and webhook signing secrets are server-side only.
+
+### Integrations
+
+Production-shaped integrations are available for:
+
+- WooCommerce
+- Telegram
+- Discord
+
+The Payment Platform remains authoritative for payment state. Integrations must not infer merchant payment completion from current address balance alone.
+
+## Telegram and Discord payment bots
+
+Current command contract:
+
+~~~text
+Telegram
+/pay <PEPEW-address> <amount>
+
+Discord
+/pepew-pay address:<PEPEW-address> amount:<amount>
+~~~
+
+The receiving address is supplied with each request. The always-on bot runtimes do not use a fixed PEPEW_RECEIVE_ADDRESS.
+
+Current low-volume policy permits one outstanding payment per bot at a time. This is a concurrency limit, not an address-allocation requirement.
+
+Production runtime/deployment:
+
+- docs/BOT_OPERATIONS.md — day-to-day use and checks
+- deploy/edison2/README.md — installation, upgrade, recovery
+- integrations/telegram/README.md — Telegram adapter
+- integrations/discord/README.md — Discord adapter
+
+## Development
+
+Node.js 20+ is used for DevKit development and CI.
+
+Payment URI package:
+
+~~~bash
 cd packages/pepew-js
 npm install
 npm test
-```
+~~~
 
-Production PEPEW Light does not require Node.js for this work. Frontend artifacts can be built in CI or on a development machine.
+Merchant SDK:
 
-## Phase C PepewPay
+~~~bash
+cd packages/pepewpay-merchant
+npm install
+npm test
+npm run build
+~~~
 
-Implemented on `main`:
+Telegram:
 
-- static Vite/React checkout shell
-- PEPEW Payment URI v1 QR generation
-- native `pepew:` wallet handoff
-- PEPEW Light web-wallet fallback
-- share/copy flow for public payment intent
-- minimal manifest/service-worker PWA shell
-- no mnemonic, private-key, derivation, or signing code
-- Node is required only at build time; `dist/` is static output
+~~~bash
+cd integrations/telegram
+npm install
+npm test
+~~~
 
-Persisted transaction-level payment status is connected to the Payment/Event Gateway through read-only high-entropy payment capability IDs.
+Discord:
 
-See `apps/pepewpay/README.md` for development and handoff details.
+~~~bash
+cd integrations/discord
+npm install
+npm test
+~~~
 
-## Phase H4 merchant helpers
+Successful main builds also produce the static PepewPay deployment artifact.
 
-Implemented on `main`:
+## Security boundaries
 
-- server-side `@pepepow/pepewpay-merchant` package for Node.js 20+
-- authenticated payment create helper
-- exact `merchant_reference` recovery helper
-- customer checkout URL builder that exposes only `payment_id`
-- exact-raw-body webhook HMAC verification
-- constant-time signature comparison and bounded replay-window validation
-- reorg-safe `payment_version` ordering helper
-- framework-neutral durable-store composition example under `examples/merchant-node/`
-- no merchant secret handling in browser packages or PepewPay
+Never place any of the following in public URLs, Payment URIs, logs, GitHub, or chat:
 
-The merchant package is intentionally separate from `@pepepow/pepew-js` so
-server credentials and webhook verification code do not become part of the
-browser/protocol package.
+- mnemonic / seed phrase
+- private key or signing material
+- merchant API credential
+- webhook signing secret
+- bot token
+- private infrastructure credentials
 
-See:
-
-```text
-packages/pepewpay-merchant/README.md
-examples/merchant-node/README.md
-```
-
-Phase I distribution policy is documented in:
-
-```text
-docs/SDK_DISTRIBUTION.md
-```
-
-Merchant production onboarding is documented in:
-
-```text
-docs/MERCHANT_QUICK_START.md
-```
-
-Merchant test/sandbox strategy is documented in:
-
-```text
-docs/TESTING_AND_SANDBOX.md
-```
-
-The runnable merchant application is:
-
-```text
-examples/merchant-app/
-```
-
-The reusable SDK code is MIT-licensed. The first public npm releases are live:
-`@pepepow/pepew-js@0.1.0` and `@pepepow/pepewpay-merchant@0.1.0`. Both were
-published from exact Git tags after green CI and then installed/imported from
-the public registry in a clean consumer. Normal pushes to `main` never publish
-npm packages; subsequent releases are prepared for npm trusted publishing via
-GitHub Actions OIDC.
-
-## License
-
-PEPEPOW DevKit and the reusable SDK artifacts are licensed under the MIT
-License. See `LICENSE`.
-
-Public SDK distribution does not change secret boundaries: mnemonic/private
-keys, merchant API keys, webhook signing secrets, npm credentials, and
-production infrastructure secrets must never be committed or packaged.
-
-## Security boundary
-
-This repository may contain client-side wallet integration helpers, but server-facing packages must never require users to disclose mnemonic phrases or private keys.
-
-Payment URI data is public payment intent. Do not put private keys, wallet recovery data, webhook secrets, API tokens, or private infrastructure endpoints into a Payment URI.
-
-## Project roadmap
-
-The canonical cross-repository architecture, development order, phase status, deployment plan, and Payment Platform roadmap are maintained in:
-
-`edisontw/pepepow-electrumx-service/docs/PAYMENT_PLATFORM_ROADMAP.md`
-
-Before substantial work, read the latest roadmap and relevant repo documentation from GitHub `main`.
+Payment signing remains client-side.
 
 ## Current status
 
 As of 2026-10-03:
 
-- repository initialized
-- Phase A protocol foundation is complete
-- GitHub Actions Node 20 build/tests are passing
-- PEPEW Payment URI v1 and shared test vectors are the current protocol baseline
-- Phase A protocol foundation is complete
-- Phase B payment correctness foundation is complete in `pepepow-electrumx-service`
-- Phase C PepewPay is complete, including production static deployment and live transaction-level checkout E2E
-- persisted checkout links use `?payment_id=...` and perform read-only SQLite-backed status polling
-- no production Node.js runtime dependency is required
-- successful `main` builds publish deployable PepewPay static files to the generated `pepewpay-dist` branch
-- production validation on 2026-09-22 completed a new 0.1 PEPEW checkout through web-wallet handoff, broadcast, `paid_unconfirmed`, and `paid_confirmed`
-- Phase H3 reference merchant flow is complete in `pepepow-electrumx-service`
-- Phase H4 adds the server-side `@pepepow/pepewpay-merchant` helpers and durable-store composition examples
-- Phase I I1 is complete: npm `@pepepow` scope ownership was confirmed, `@pepepow/pepew-js@0.1.0` and `@pepepow/pepewpay-merchant@0.1.0` were published from Git tags, and clean public-registry install/import smoke passed on 2026-10-02
-- Phase I I2 adds a runnable Node + SQLite merchant application with durable idempotency, create recovery, webhook deduplication, and reorg-safe payment_version handling
-- Phase I I3 adds a production merchant Quick Start, secure webhook registration helper, and Express/Fastify exact-raw-body integration patterns
-- Phase I I4 adds deterministic local contract testing plus an explicit bounded live-smoke path without a permanent sandbox service
-- Phase I I5.1 adds the first WooCommerce classic-checkout gateway skeleton with stable order identity, exact amount snapshotting, Payment API create/recovery, and PepewPay redirect
-- Phase I I5.2 adds exact-body signed webhook verification, durable event/version handling, and reorg-safe Woo order lifecycle policy
-- Phase I I5.3 adds WooCommerce Checkout Blocks and passes a pinned WordPress 7.1.2 / WooCommerce 11.1.2 runtime matrix in both legacy and HPOS storage modes
-- Phase I I5.4 WooCommerce is complete, including externally reachable paid checkout -> PepewPay -> integrated Wallet -> authoritative Payment Platform -> signed webhook -> Woo order paid acceptance on 2026-09-30
-- Phase I I5.5 Telegram merchant/payment adapter is complete, including normal production Bot API transport and real 0.1 PEPEW payment/webhook/message-update E2E on 2026-09-30
-- Phase I I5.6 Discord merchant/payment adapter is complete: dedicated HTTP interaction transport plus a real 0.1 PEPEW Payment Platform/webhook E2E reached `paid_unconfirmed` -> `paid_confirmed`, updated the same ordinary Discord bot message, and the temporary runtime/infrastructure cleanup audit was operator-confirmed PASS on 2026-10-01
-- Phase I is CLOSED as of 2026-10-02: I1 distribution, I2 sample app, I3 production guide, I4 testing strategy, and I5 WooCommerce/Telegram/Discord integrations all satisfy their exit criteria
+- PEPEW Payment URI v1 is stable.
+- PepewPay is deployed and uses transaction-level Payment Platform state.
+- @pepepow/pepew-js and @pepepow/pepewpay-merchant 0.1.0 are published.
+- WooCommerce, Telegram, and Discord integrations are implemented and contract-tested.
+- multi-merchant scoped credentials are supported without changing the merchant SDK Bearer transport.
+- Telegram/Discord always-on runtime code uses a user-supplied receiving address per payment command.
 
+Detailed phase history and production architecture are maintained in edisontw/pepepow-electrumx-service/docs/PAYMENT_PLATFORM_ROADMAP.md.
 
-## Phase K DevKit alignment
+## License
 
-Phase K K5 is complete in the server repository: explicit merchant ownership,
-scoped/revocable credentials, merchant-scoped idempotency/reference recovery,
-webhook ownership isolation, production migration, and Phase K H2/J1 recovery
-have all been production-validated.
-
-DevKit K6 keeps the existing `@pepepow/pepewpay-merchant` API compatible:
-
-- each independent merchant receives its own operator-issued scoped credential;
-- the SDK still sends that value as `Authorization: Bearer <credential>`;
-- the same `merchant_reference` and `Idempotency-Key` may be reused by
-  different merchants because the server scopes them by authenticated merchant;
-- a merchant can recover/list/manage only its own private payment/webhook
-  namespace;
-- public payment capability URLs remain unchanged;
-- merchant dashboard/self-service signup/provisioning remains deferred.
-
-Deterministic two-merchant namespace coverage is in
-`test-vectors/merchant-namespaces-v1.json` and the merchant SDK contract tests.
-
-
-## Production bot runtime
-
-The current operational priority is to run the already-accepted Telegram and
-Discord payment adapters as small always-on services instead of expanding the
-Payment Platform feature set.
-
-Target host:
-
-```text
-edison2 / 152.67.253.217 / pepepow.net
-```
-
-The production runtime keeps Payment Platform authority on
-`pay.pepepow.net`, uses separate scoped merchant credentials for Telegram and
-Discord, binds Node listeners to localhost, and exposes only narrow HTTPS
-callback paths through the existing Apache site. Deployment files and the
-operator runbook are under `deploy/edison2/`.
+Reusable DevKit and SDK artifacts are MIT licensed. See LICENSE.

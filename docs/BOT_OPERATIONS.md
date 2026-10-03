@@ -1,318 +1,166 @@
-# PEPEW Telegram / Discord Bot Operations Guide
+# PEPEW Telegram / Discord Bot Operations
 
-Production status: **LIVE — accepted 2026-10-03**
+Production host: edison2 / https://pepepow.net
 
-Production host:
+Payment authority: https://pay.pepepow.net
 
-```text
-edison2
-https://pepepow.net
-```
+Use this document for normal bot operation. Installation, upgrade, and recovery steps are in ../deploy/edison2/README.md.
 
-Payment authority remains on:
+## User commands
 
-```text
-https://pay.pepepow.net
-```
+Telegram private chat:
 
-This guide is for normal bot use and day-to-day operations. Full deployment and recovery steps remain in [../deploy/edison2/README.md](../deploy/edison2/README.md).
-
-## 1. User commands
-
-The current bot contract requires the user to supply the PEPEW receiving address
-for every payment request. The always-on runtimes do not use a fixed
-`PEPEW_RECEIVE_ADDRESS`.
-
-### Telegram
-
-Use the dedicated PEPEW payment bot in a **private chat**.
-
-Command:
-
-```text
-/pay <address> <amount>
-```
+~~~text
+/pay <PEPEW-address> <amount>
+~~~
 
 Example:
 
-```text
+~~~text
 /pay PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb 0.1
-```
+~~~
 
-Expected flow:
+Discord:
 
-```text
-/pay <address> 0.1
-  -> bot creates a PEPEW payment request for that address
-  -> bot returns an Open PepewPay button
-  -> payer opens PepewPay and completes payment in a PEPEW wallet
-  -> bot message updates when payment is detected
-  -> bot message updates again when the configured confirmation policy is satisfied
-```
-
-The Telegram production bot accepts private-chat payment commands only.
-
-### Discord
-
-Use the slash command in the configured Discord server:
-
-```text
-/pepew-pay address:<address> amount:<amount>
-```
+~~~text
+/pepew-pay address:<PEPEW-address> amount:<amount>
+~~~
 
 Example:
 
-```text
+~~~text
 /pepew-pay address:PRfbEeHAKKbz6Voz85WJudrJwTA3ZbHunb amount:0.1
-```
+~~~
 
-Expected flow:
+The receiving address is supplied per request and validated by the Payment Platform. The bot does not derive addresses and does not require wallet secrets.
 
-```text
-/pepew-pay address:<address> amount:0.1
-  -> Discord acknowledges the signed interaction
-  -> bot creates a payment for the supplied PEPEW address
-  -> bot creates an ordinary channel payment message
-  -> message includes an Open PepewPay button
-  -> payer completes payment in a PEPEW wallet
-  -> the same Discord message updates as authoritative payment state changes
-  -> confirmed state is shown after the configured confirmation policy is satisfied
-```
+Payment flow:
 
-The Discord bot may appear offline because this integration uses Discord HTTP Interactions rather than a persistent Gateway/WebSocket connection.
+~~~text
+command
+  -> authoritative Payment API create/recovery
+  -> PepewPay link
+  -> client-side wallet payment/signing
+  -> signed Payment Platform webhook
+  -> bot message update
+~~~
 
-## 2. Address/amount rules and initial production limits
+## Current limits
 
-Address:
+- amount must be positive with at most 8 decimal places;
+- one outstanding payment is allowed per bot;
+- default expiry is 900 seconds;
+- production confirmation policy is currently 1 confirmation;
+- Telegram accepts private-chat payment commands only;
+- Discord uses HTTP Interactions and may appear offline.
 
-- is supplied by the user for each payment request;
-- is passed to the authoritative Payment Platform, which performs PEPEW address validation;
-- is not derived by the bot and does not require a mnemonic or private key.
+The one-payment limit is a low-volume concurrency policy and is independent of the receiving address.
 
-Amounts:
+## Security
 
-- must be positive;
-- may contain up to 8 decimal places;
-- are denominated in PEPEW.
+The bot host must never receive or store:
 
-Initial production policy:
-
-- Telegram permits one outstanding payment at a time.
-- Discord permits one outstanding payment at a time.
-- Telegram and Discord still use different scoped merchant credentials, but neither runtime has a fixed receiving address.
-- Current production payment expiry is 900 seconds (15 minutes).
-- Current production confirmation policy is 1 confirmation.
-
-If a payment is already in progress, a second request is rejected until the current payment reaches a terminal state or expires. This low-volume concurrency limit is retained independently of the receiving-address change.
-
-Do not add address-pool, HD derivation, queue, Redis, PostgreSQL, or other concurrency infrastructure until real usage demonstrates the need.
-
-## 3. Security boundary
-
-The bots are merchant-side payment adapters, not wallets.
-
-The server must never receive:
-
-```text
+~~~text
 mnemonic
 seed phrase
 private key
 wallet signing material
-```
+~~~
 
-Payment signing remains client-side in the payer's wallet.
+Server-side secrets:
 
-Server-side secrets include:
-
-```text
+~~~text
 Telegram bot token
 Discord bot token
-scoped PEPEW merchant API credentials
+scoped merchant credentials
 Payment Platform webhook signing secrets
-```
+~~~
 
-Do not print, paste, commit, or log those values.
+Do not print env files or secret values in logs, shell history, GitHub, or chat.
 
-## 4. Production services
+## Services and health
 
-Systemd services:
+Services:
 
-```text
+~~~text
 pepew-telegram-bot.service
 pepew-discord-bot.service
-```
+~~~
 
-Check both:
+Check status:
 
-```bash
-sudo systemctl status pepew-telegram-bot --no-pager
-sudo systemctl status pepew-discord-bot --no-pager
-```
-
-Compact active check:
-
-```bash
-systemctl is-active pepew-telegram-bot pepew-discord-bot
-```
-
-Expected:
-
-```text
-active
-active
-```
-
-Boot enablement:
-
-```bash
+~~~bash
+systemctl is-active pepew-telegram-bot pepew-discord-bot apache2
 systemctl is-enabled pepew-telegram-bot pepew-discord-bot
-```
+~~~
 
-Expected:
+Health:
 
-```text
-enabled
-enabled
-```
-
-## 5. Health checks
-
-Telegram:
-
-```bash
+~~~bash
 curl -fsS http://127.0.0.1:8790/healthz
-```
-
-Discord:
-
-```bash
+echo
 curl -fsS http://127.0.0.1:8791/healthz
-```
+echo
+~~~
 
-Both should return JSON containing:
+Listeners must remain loopback-only:
 
-```text
-"ok":true
-```
-
-Check listeners:
-
-```bash
+~~~bash
 sudo ss -ltnp | grep -E '127\.0\.0\.1:(8790|8791)\b'
-```
+~~~
 
-Required:
+Public callback routes:
 
-```text
-127.0.0.1:8790
-127.0.0.1:8791
-```
-
-They must not bind to:
-
-```text
-0.0.0.0:8790
-0.0.0.0:8791
-[::]:8790
-[::]:8791
-```
-
-## 6. Safe restart
-
-Restart Telegram only:
-
-```bash
-sudo systemctl restart pepew-telegram-bot
-sudo systemctl status pepew-telegram-bot --no-pager
-curl -fsS http://127.0.0.1:8790/healthz
-```
-
-Restart Discord only:
-
-```bash
-sudo systemctl restart pepew-discord-bot
-sudo systemctl status pepew-discord-bot --no-pager
-curl -fsS http://127.0.0.1:8791/healthz
-```
-
-Restart both only when necessary:
-
-```bash
-sudo systemctl restart pepew-telegram-bot pepew-discord-bot
-```
-
-Do not restart PEPEPOWd, Apache, or Payment Platform merely because one bot needs a restart.
-
-## 7. Logs
-
-Telegram:
-
-```bash
-sudo journalctl -u pepew-telegram-bot -n 50 --no-pager
-```
-
-Discord:
-
-```bash
-sudo journalctl -u pepew-discord-bot -n 50 --no-pager
-```
-
-Follow live logs only during diagnosis:
-
-```bash
-sudo journalctl -u pepew-telegram-bot -f
-sudo journalctl -u pepew-discord-bot -f
-```
-
-Logs must never contain bot tokens, merchant credentials, webhook signing secrets, mnemonic phrases, private keys, or raw wallet signing material.
-
-## 8. Apache callback routes
-
-Production HTTPS callbacks:
-
-```text
+~~~text
 https://pepepow.net/pepew-telegram/webhooks/pepew
 https://pepepow.net/pepew-discord/interactions
 https://pepepow.net/pepew-discord/webhooks/pepew
-```
+~~~
 
-The underlying Node listeners remain localhost-only.
+A GET to a callback path may return backend 404. A proxy 503 usually means Apache cannot reach the local runtime.
 
-Check Apache syntax:
+## Restart
 
-```bash
-sudo apache2ctl configtest
-```
+Restart one service when possible:
 
-Expected:
+~~~bash
+sudo systemctl restart pepew-telegram-bot
+sudo systemctl restart pepew-discord-bot
+~~~
 
-```text
-Syntax OK
-```
+After restart, recheck its health endpoint.
 
-Check the main site:
+Do not restart PEPEPOWd or the Payment Platform for a bot-only problem.
 
-```bash
-curl -fsSI https://pepepow.net/ | head
-```
+## Logs
 
-Expected: HTTP 200.
+Recent logs:
 
-A normal GET to the exact callback paths may return 404 from the bot runtime. A 404 proves the request reached the backend; a 503 usually indicates the proxy could not reach the local runtime.
+~~~bash
+sudo journalctl -u pepew-telegram-bot -n 50 --no-pager
+sudo journalctl -u pepew-discord-bot -n 50 --no-pager
+~~~
 
-## 9. Discord application endpoint
+Follow during diagnosis only:
 
-Production Discord Interactions Endpoint URL:
+~~~bash
+sudo journalctl -u pepew-telegram-bot -f
+sudo journalctl -u pepew-discord-bot -f
+~~~
 
-```text
+Logs must not contain bot tokens, merchant credentials, webhook signing secrets, mnemonic phrases, private keys, or signing material.
+
+## Discord command registration
+
+Production Interactions Endpoint:
+
+~~~text
 https://pepepow.net/pepew-discord/interactions
-```
+~~~
 
-If the Discord application is replaced or reconfigured, this endpoint must pass Discord's signed PING validation.
+Register or update the guild command after any command-schema change:
 
-Register/update the configured guild command:
-
-```bash
+~~~bash
 cd /opt/pepepow-devkit/integrations/discord
 
 sudo -u pepew-bot bash -c '
@@ -321,50 +169,46 @@ sudo -u pepew-bot bash -c '
   set +a
   npm run setup:command
 '
-```
+~~~
 
-Do not print the bot token.
+The current schema requires both address and amount.
 
-## 10. Telegram transport
+## Telegram transport
 
-The Telegram production bot uses Bot API long polling and therefore must not have a Telegram Bot API webhook configured.
+The production Telegram bot uses long polling and must not have a Telegram Bot API webhook configured.
 
-A persistent Telegram `getUpdates` conflict / HTTP 409 usually means another poller or Telegram webhook configuration is interfering.
+A persistent getUpdates HTTP 409 normally indicates another poller or a conflicting webhook configuration. Diagnose the conflicting consumer before changing production configuration.
 
-Do not blindly delete or rotate production configuration; diagnose the conflicting consumer first.
-
-## 11. Configuration locations
+## Configuration
 
 Runtime env files:
 
-```text
+~~~text
 /etc/pepew-bots/telegram.env
 /etc/pepew-bots/telegram-webhook.env
 /etc/pepew-bots/discord.env
 /etc/pepew-bots/discord-webhook.env
-```
+~~~
 
 Expected ownership/mode:
 
-```text
+~~~text
 root:pepew-bot
 0640
-```
+~~~
 
 Runtime routing state:
 
-```text
+~~~text
 /var/lib/pepew-bots/telegram-state.json
 /var/lib/pepew-bots/discord-state.json
-```
+~~~
 
-These JSON files are restart/message-routing state only. They are not authoritative payment accounting.
+These JSON files contain restart/message-routing state only. Payment authority remains on the Payment Platform.
 
-Never dump production env files during routine diagnostics.
+## Daily check
 
-## 12. Quick daily check
-
-```bash
+~~~bash
 systemctl is-active pepew-telegram-bot pepew-discord-bot apache2
 curl -fsS http://127.0.0.1:8790/healthz
 echo
@@ -372,29 +216,6 @@ curl -fsS http://127.0.0.1:8791/healthz
 echo
 curl -fsSI https://pepepow.net/ | head
 sudo ss -ltnp | grep -E '127\.0\.0\.1:(8790|8791)\b'
-```
+~~~
 
-Expected:
-
-- Telegram active;
-- Discord active;
-- Apache active;
-- both health endpoints report `ok: true`;
-- main site returns HTTP 200;
-- ports 8790/8791 remain loopback-only.
-
-## 13. Production acceptance baseline
-
-Accepted on 2026-10-03:
-
-- historical acceptance used the earlier fixed-address Telegram `/pay 0.1` flow -> confirmed -> bot message updated;
-- historical acceptance used the earlier fixed-address Discord `/pepew-pay amount:0.1` flow -> confirmed -> same channel message updated;
-- current GitHub contract corrects this by requiring a receiving address in every Telegram/Discord command; redeploy current `main` before using the new syntax in production;
-- both services active/enabled;
-- localhost-only listeners verified;
-- Apache exact callback routes verified;
-- permanent scoped Payment Platform webhooks registered;
-- log secret checks passed;
-- temporary credential-transfer and SSH handoff artifacts removed.
-
-Use this baseline when diagnosing future regressions.
+For a host still running the pre-33c29b9 fixed-address bot contract, follow the upgrade section in ../deploy/edison2/README.md before using the current command syntax.
