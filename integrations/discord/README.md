@@ -62,7 +62,7 @@ Implemented:
 - exact-raw-body Ed25519 interaction signature verification using Discord's
   application public key
 - PING -> PONG response contract
-- `/pepew-pay` application-command parsing with the amount carried as a string
+- `/pepew-pay` application-command parsing with required `address` and string `amount` options
 - stable hashed merchant reference and idempotency key
 - exact PEPEW amount validation
 - Payment API create through `@pepepow/pepewpay-merchant`
@@ -355,6 +355,8 @@ normal operation now uses `npm start` and remains online for repeated
 The production runtime:
 
 - verifies every Discord interaction against the exact raw request body;
+- requires `/pepew-pay address:<address> amount:<amount>`;
+- takes the PEPEW receiving address from each signed interaction rather than a fixed runtime environment variable;
 - acknowledges the slash command before creating the payment;
 - posts an ordinary channel message with the PepewPay button;
 - intentionally allows only one outstanding payment at a time for the first low-volume production release;
