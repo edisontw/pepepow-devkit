@@ -33,6 +33,8 @@ The minimal edison2 rollout is live and accepted:
 
 This runbook remains the recovery/redeployment reference. Do not repeat merchant creation or webhook registration blindly on an already-live host; first inspect the existing scoped merchant, endpoint, env-file, and systemd state.
 
+For normal user commands and day-to-day service checks/restarts, see [../../docs/BOT_OPERATIONS.md](../../docs/BOT_OPERATIONS.md).
+
 ## Boundaries
 
 - Do not move Payment Platform SQLite, watcher, webhook worker, mnemonic,
