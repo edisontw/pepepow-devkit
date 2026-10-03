@@ -223,3 +223,22 @@ DevKit K6 keeps the existing `@pepepow/pepewpay-merchant` API compatible:
 
 Deterministic two-merchant namespace coverage is in
 `test-vectors/merchant-namespaces-v1.json` and the merchant SDK contract tests.
+
+
+## Production bot runtime
+
+The current operational priority is to run the already-accepted Telegram and
+Discord payment adapters as small always-on services instead of expanding the
+Payment Platform feature set.
+
+Target host:
+
+```text
+edison2 / 152.67.253.217 / pepepow.net
+```
+
+The production runtime keeps Payment Platform authority on
+`pay.pepepow.net`, uses separate scoped merchant credentials for Telegram and
+Discord, binds Node listeners to localhost, and exposes only narrow HTTPS
+callback paths through the existing Apache site. Deployment files and the
+operator runbook are under `deploy/edison2/`.
