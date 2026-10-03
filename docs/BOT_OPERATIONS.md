@@ -221,4 +221,4 @@ curl -fsSI https://pepepow.net/ | head
 sudo ss -ltnp | grep -E '127\.0\.0\.1:(8790|8791)\b'
 ~~~
 
-Production acceptance on 2026-10-03 confirmed the current user-supplied-address command contract with successful real Telegram and Discord payments. Use ../deploy/edison2/README.md for future upgrades or recovery.
+Production acceptance on 2026-10-03 confirmed the user-supplied-address command contract with successful real Telegram and Discord payments. Concurrency acceptance on 2026-10-04 confirmed two simultaneous Telegram payments on different addresses (`pending_payments=2`), same-address rejection in Telegram, and cross-bot same-address rejection in Discord. This verifies that concurrency is allowed by distinct address while address-window exclusivity remains authoritative on the Payment Platform. Use ../deploy/edison2/README.md for future upgrades or recovery.
