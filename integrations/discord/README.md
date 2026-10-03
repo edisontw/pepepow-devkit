@@ -154,7 +154,8 @@ The runtime:
 - requires address and amount in /pepew-pay;
 - acknowledges before asynchronous payment creation;
 - posts and later edits one ordinary channel message;
-- permits one outstanding payment at a time in the initial low-volume release;
+- permits multiple outstanding payments when different receiving addresses are used;
+- treats Payment Platform `409 payment_address_in_use` as a user-visible same-address reservation conflict;
 - stores only bounded routing/restart state locally;
 - receives a permanent signed Payment Platform webhook;
 - applies only increasing payment_version updates.
