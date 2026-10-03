@@ -50,13 +50,14 @@ command
 ## Current limits
 
 - amount must be positive with at most 8 decimal places;
-- one outstanding payment is allowed globally per bot, across all Telegram chats;
+- multiple outstanding payments may coexist when they use different receiving addresses;
+- the Payment Platform rejects a new payment if the same receiving address already has an overlapping payment time window (`409 payment_address_in_use`);
 - default expiry is 900 seconds;
 - production confirmation policy is currently 1 confirmation;
 - Telegram accepts `private`, `group`, and `supergroup` payment commands;
 - Discord uses HTTP Interactions and may appear offline.
 
-The one-payment limit is a low-volume concurrency policy and is independent of the receiving address.
+Address-window exclusivity is authoritative on the Payment Platform and applies across Telegram, Discord, WooCommerce, and other merchants. Bot-local runtime state is only for message routing; it is not the concurrency authority. Because payment timestamps use one-second resolution and late/reorg observations must remain unambiguous, an address is reusable only after the previous payment's `expires_at` boundary has passed.
 
 ## Security
 
