@@ -1,0 +1,39 @@
+[Unit]
+Description=PEPEW Telegram Payment Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pepew-bot
+Group=pepew-bot
+WorkingDirectory=/opt/pepepow-devkit/integrations/telegram
+Environment=NODE_ENV=production
+Environment=TELEGRAM_API_ENV=production
+Environment=PEPEW_BOT_HOST=127.0.0.1
+Environment=PEPEW_BOT_PORT=8790
+Environment=PEPEW_WEBHOOK_PATH=/pepew-telegram/webhooks/pepew
+Environment=PEPEW_STATE_FILE=/var/lib/pepew-bots/telegram-state.json
+EnvironmentFile=/etc/pepew-bots/telegram.env
+EnvironmentFile=/etc/pepew-bots/telegram-webhook.env
+ExecStart=/usr/bin/node scripts/runtime.mjs
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+UMask=0077
+StateDirectory=pepew-bots
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/pepew-bots
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
