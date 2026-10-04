@@ -1,0 +1,24 @@
+[Unit]
+Description=PEPEPOW Community Discord Network Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pepew-bot
+Group=pepew-bot
+WorkingDirectory=/opt/pepepow-devkit/community-bots
+EnvironmentFile=/etc/pepepow-community-bots/bots.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/pepepow-devkit/community-bots/.venv/bin/python -m pepepow_bots.discord_network
+Restart=always
+RestartSec=15
+CPUQuota=10%
+MemoryMax=160M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
