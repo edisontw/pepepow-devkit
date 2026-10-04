@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pepepow-community-bots"
+version = "0.2.0"
+description = "PEPEPOW Discord and Telegram community status bots"
+requires-python = ">=3.10"
+dependencies = [
+  "discord.py==2.4.0",
+  "httpx==0.28.1",
+  "python-dotenv==1.0.1",
+  "python-telegram-bot==21.4",
+]
