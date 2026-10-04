@@ -54,7 +54,7 @@ async def refresh() -> None:
         client, HASHRATE_CHANNEL, f"Hashrate: {format_hashrate(hashrate)}"
     )
     await set_channel_name(
-        client, SUPPLY_CHANNEL, f"Supply: {format_supply(supply)}"
+        client, SUPPLY_CHANNEL, f"Supply: {format_supply(supply)}/90B"
     )
 
 
