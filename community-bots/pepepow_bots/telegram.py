@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import html
 import logging
 import os
@@ -18,8 +17,7 @@ from .light_api import (
     format_supply,
     format_usd,
     int_or_none,
-    price_usdt,
-    volume_24h_usd,
+    source_decimal,
 )
 
 load_dotenv()
@@ -40,7 +38,7 @@ async def start_cmd(
         return
     await update.message.reply_text(
         "<b>PEPEPOW Bot</b>\n\n"
-        "/price — PEPEW market summary\n"
+        "/price — PEPEW multi-source market summary\n"
         "/network — PEPEPOW network summary\n"
         "/status — PEPEW Light API status",
         parse_mode=ParseMode.HTML,
@@ -63,42 +61,65 @@ async def price_cmd(
     if update.message is None:
         return
     await _typing(update, context)
-    price_result, network_result = await asyncio.gather(
-        api.price(), api.network(), return_exceptions=True
-    )
 
-    if isinstance(price_result, Exception):
-        logger.warning("Telegram price request failed: %s", price_result)
+    try:
+        payload = await api.market()
+    except Exception as exc:
+        logger.warning("Telegram market request failed: %s", exc)
         await update.message.reply_text(
-            "PEPEW price data is temporarily unavailable."
+            "PEPEW market data is temporarily unavailable."
         )
         return
 
-    p = price_usdt(price_result)
-    volume = volume_24h_usd(price_result)
-    source = html.escape(
-        str(price_result.get("source") or "PEPEW Light")
-    )
-    status = html.escape(str(price_result.get("status") or "unknown"))
+    cmc_price = source_decimal(payload, "cmc", "price_usd")
+    nonkyc_price = source_decimal(payload, "nonkyc", "price_usd")
+    nonkyc_volume = source_decimal(payload, "nonkyc", "volume_24h_usd")
+    nestex_price = source_decimal(payload, "nestex", "price_usd")
+    nestex_volume = source_decimal(payload, "nestex", "volume_24h_usd")
+    total_volume = decimal_or_none(payload.get("total_volume_24h_usd"))
+    market_cap = decimal_or_none(payload.get("market_cap_onchain_usd"))
+    state = html.escape(str(payload.get("status") or "unknown"))
 
-    lines = [
-        "<b>PEPEW Market</b>",
-        f"Price: <code>${format_price(p)}</code> USDT",
-        f"24h volume: <code>${format_usd(volume)}</code>",
-        f"Source: {source} via PEPEW Light",
-    ]
-    if status == "stale":
-        lines.append("Data status: stale cache")
+    lines = ["<b>PEPEPOW Price Overview</b>"]
 
-    if not isinstance(network_result, Exception):
-        market_cap = decimal_or_none(
-            network_result.get("market_cap_usdt")
+    if cmc_price is not None:
+        lines.append(
+            f"• CMC price: <code>{format_price(cmc_price)}</code> USD"
         )
-        if market_cap is not None:
-            lines.append(
-                f"On-chain market cap: "
-                f"<code>${format_usd(market_cap)}</code>"
-            )
+    else:
+        lines.append("• CMC price: unavailable")
+
+    if nonkyc_price is not None:
+        lines.append(
+            f"• NonKYC price: <code>{format_price(nonkyc_price)}</code> USD\n"
+            f"  NonKYC 24h Vol (USDT+BNB): "
+            f"<code>{format_usd(nonkyc_volume)}</code> USD"
+        )
+    else:
+        lines.append("• NonKYC: unavailable")
+
+    if nestex_price is not None:
+        lines.append(
+            f"• NestEx price: <code>{format_price(nestex_price)}</code> USD\n"
+            f"  NestEx 24h Vol (USDT): "
+            f"<code>{format_usd(nestex_volume)}</code> USD"
+        )
+    else:
+        lines.append("• NestEx: unavailable")
+
+    if total_volume is not None:
+        lines.append(
+            f"• Total 24h Vol: <code>{format_usd(total_volume)}</code> USD"
+        )
+
+    if market_cap is not None:
+        lines.append(
+            "• MarketCap (on-chain supply × CMC price): "
+            f"<code>{format_usd(market_cap)}</code> USD"
+        )
+
+    if state != "ok":
+        lines.append(f"• Data status: {state}")
 
     await update.message.reply_text(
         "\n".join(lines), parse_mode=ParseMode.HTML
@@ -147,10 +168,14 @@ async def status_cmd(
     if update.message is None:
         return
     try:
-        payload = await api.network()
-        state = html.escape(str(payload.get("status") or "unknown"))
+        network = await api.network()
+        market = await api.market()
+        network_state = html.escape(str(network.get("status") or "unknown"))
+        market_state = html.escape(str(market.get("status") or "unknown"))
         await update.message.reply_text(
-            f"PEPEW Light API: <b>{state}</b>",
+            "PEPEW Light API\n"
+            f"Network: <b>{network_state}</b>\n"
+            f"Market: <b>{market_state}</b>",
             parse_mode=ParseMode.HTML,
         )
     except Exception:

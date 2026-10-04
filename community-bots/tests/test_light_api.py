@@ -8,6 +8,7 @@ from pepepow_bots.light_api import (
     format_usd,
     int_or_none,
     price_usdt,
+    source_decimal,
     volume_24h_usd,
 )
 
@@ -28,3 +29,9 @@ def test_format_network_values():
     assert int_or_none("4980000") == 4980000
     assert format_hashrate(decimal_or_none("2500000000")) == "2.5 GH/s"
     assert format_supply(decimal_or_none("81234567890")) == "81.2B"
+
+
+def test_market_source_helper():
+    payload = {"sources": {"cmc": {"price_usd": "0.00000077"}}}
+    assert source_decimal(payload, "cmc", "price_usd") == Decimal("0.00000077")
+    assert source_decimal(payload, "nestex", "price_usd") is None

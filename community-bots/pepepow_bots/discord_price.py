@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 
@@ -9,14 +8,7 @@ from discord.ext import tasks
 from dotenv import load_dotenv
 
 from .discord_common import env_channel, set_channel_name
-from .light_api import (
-    LightAPI,
-    decimal_or_none,
-    format_price,
-    format_usd,
-    price_usdt,
-    volume_24h_usd,
-)
+from .light_api import LightAPI, decimal_or_none, format_price, format_usd, source_decimal
 
 load_dotenv()
 logging.basicConfig(
@@ -29,11 +21,11 @@ TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 UPDATE_SECONDS = max(60, int(os.getenv("BOT_UPDATE_SECONDS", "600")))
 
 PRICE_CHANNEL = env_channel("DISCORD_CHANNEL_ID")
-VOLUME_CHANNEL = env_channel("DISCORD_CHANNEL_ID2")
+NONKYC_VOLUME_CHANNEL = env_channel("DISCORD_CHANNEL_ID2")
+NESTEX_VOLUME_CHANNEL = env_channel("DISCORD_CHANNEL_ID2_NESTEX")
+NESTEX_PRICE_CHANNEL = env_channel("DISCORD_CHANNEL_NESTEXPRICE")
 MARKET_CAP_CHANNEL = env_channel("DISCORD_CHANNEL_ID2_MC")
 NONKYC_PRICE_CHANNEL = env_channel("DISCORD_CHANNEL_NONKYC_PRICE")
-LEGACY_NESTEX_PRICE_CHANNEL = env_channel("DISCORD_CHANNEL_NESTEXPRICE")
-LEGACY_NESTEX_VOLUME_CHANNEL = env_channel("DISCORD_CHANNEL_ID2_NESTEX")
 
 client = discord.Client(intents=discord.Intents.default())
 api = LightAPI()
@@ -41,45 +33,48 @@ api = LightAPI()
 
 @tasks.loop(seconds=UPDATE_SECONDS)
 async def refresh() -> None:
-    results = await asyncio.gather(
-        api.price(), api.network(), return_exceptions=True
-    )
-    price_payload = None if isinstance(results[0], Exception) else results[0]
-    network_payload = None if isinstance(results[1], Exception) else results[1]
+    try:
+        payload = await api.market()
+    except Exception as exc:
+        logger.warning("Market refresh failed: %s", exc)
+        return
 
-    if isinstance(results[0], Exception):
-        logger.warning("Price refresh failed: %s", results[0])
-    if isinstance(results[1], Exception):
-        logger.warning("Network refresh failed: %s", results[1])
-
-    p = price_usdt(price_payload or {})
-    volume = volume_24h_usd(price_payload or {})
-    market_cap = decimal_or_none(
-        (network_payload or {}).get("market_cap_usdt")
-    )
+    cmc_price = source_decimal(payload, "cmc", "price_usd")
+    nonkyc_price = source_decimal(payload, "nonkyc", "price_usd")
+    nonkyc_volume = source_decimal(payload, "nonkyc", "volume_24h_usd")
+    nestex_price = source_decimal(payload, "nestex", "price_usd")
+    nestex_volume = source_decimal(payload, "nestex", "volume_24h_usd")
+    market_cap = decimal_or_none(payload.get("market_cap_onchain_usd"))
 
     await set_channel_name(
-        client, PRICE_CHANNEL, f"Price: ${format_price(p)}"
+        client,
+        PRICE_CHANNEL,
+        f"Price (CMC) : ${format_price(cmc_price)}",
     )
     await set_channel_name(
-        client, NONKYC_PRICE_CHANNEL, f"NonKYC: ${format_price(p)}"
+        client,
+        NONKYC_VOLUME_CHANNEL,
+        f"NonKYC 24h Vol : ${format_usd(nonkyc_volume)}",
     )
     await set_channel_name(
-        client, VOLUME_CHANNEL, f"24h Vol: ${format_usd(volume)}"
+        client,
+        NONKYC_PRICE_CHANNEL,
+        f"NonKYC : ${format_price(nonkyc_price)}",
+    )
+    await set_channel_name(
+        client,
+        NESTEX_PRICE_CHANNEL,
+        f"NestEx : ${format_price(nestex_price)}",
+    )
+    await set_channel_name(
+        client,
+        NESTEX_VOLUME_CHANNEL,
+        f"NestEx TradVol : ${format_usd(nestex_volume)}",
     )
     await set_channel_name(
         client,
         MARKET_CAP_CHANNEL,
-        f"MarketCap: ${format_usd(market_cap)}",
-    )
-
-    # v2 intentionally uses only PEPEW Light public APIs. Mark old
-    # NestEx-only channels instead of leaving stale values behind.
-    await set_channel_name(
-        client, LEGACY_NESTEX_PRICE_CHANNEL, "NestEx: retired"
-    )
-    await set_channel_name(
-        client, LEGACY_NESTEX_VOLUME_CHANNEL, "NestEx Vol: retired"
+        f"MarketCap (on-chain) : ${format_usd(market_cap)}",
     )
 
 
