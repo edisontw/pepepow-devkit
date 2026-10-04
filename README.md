@@ -17,6 +17,8 @@ integrations/
   telegram/
   discord/
 
+community-bots/              Legacy community status bots migrated off MN5
+
 examples/
   merchant-node/
   merchant-app/
@@ -70,11 +72,13 @@ Merchant credentials and webhook signing secrets are server-side only.
 
 ### Integrations
 
-Production-shaped integrations are available for:
+Production-shaped payment integrations are available for:
 
 - WooCommerce
 - Telegram
 - Discord
+
+Low-volume community status bots are maintained separately under `community-bots/`. They use PEPEW Light as the single public data boundary for price and network summaries and are intended to run on edison2 rather than the pool host.
 
 The Payment Platform remains authoritative for payment state. Integrations must not infer merchant payment completion from current address balance alone.
 
