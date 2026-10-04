@@ -43,6 +43,9 @@ class LightAPI:
     async def network(self) -> dict[str, Any]:
         return await self._get_json("/api/network")
 
+    async def market(self) -> dict[str, Any]:
+        return await self._get_json("/api/market")
+
 
 def decimal_or_none(value: Any) -> Decimal | None:
     if value is None or value == "":
@@ -69,6 +72,18 @@ def price_usdt(payload: dict[str, Any]) -> Decimal | None:
 
 def volume_24h_usd(payload: dict[str, Any]) -> Decimal | None:
     return decimal_or_none(payload.get("volume_24h_usd"))
+
+
+def source_decimal(
+    payload: dict[str, Any], source: str, field: str
+) -> Decimal | None:
+    sources = payload.get("sources")
+    if not isinstance(sources, dict):
+        return None
+    source_payload = sources.get(source)
+    if not isinstance(source_payload, dict):
+        return None
+    return decimal_or_none(source_payload.get(field))
 
 
 def format_price(value: Decimal | None) -> str:
