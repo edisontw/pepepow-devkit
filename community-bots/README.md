@@ -7,9 +7,10 @@ Community Discord and Telegram status bots migrated from MN5.
 The v2 runtimes use **PEPEW Light** as their only public data API:
 
 - `GET https://light.pepepow.net/api/price`
+- `GET https://light.pepepow.net/api/market`
 - `GET https://light.pepepow.net/api/network`
 
-The bots do not directly query Explorer, NonKYC, NestEx, wallet RPC, or the old `api.pepepow.net` price endpoint.
+The bots do not directly query Explorer, NonKYC, NestEx, wallet RPC, or the old `api.pepepow.net` price endpoint. Light aggregates CMC, NonKYC, NestEx, on-chain supply, and network data server-side.
 
 ## Runtimes
 
@@ -80,6 +81,7 @@ Verify Light first:
 
 ```bash
 curl -fsS https://light.pepepow.net/api/price
+curl -fsS https://light.pepepow.net/api/market
 curl -fsS https://light.pepepow.net/api/network
 ```
 
